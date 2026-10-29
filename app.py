@@ -329,7 +329,7 @@ def list_docs():
 
 
 @app.delete("/api/docs/<doc_id>")
-@require_auth(optional=True)
+@require_auth()
 def delete_doc(doc_id):
     tenant_id = g.tenant_id
     doc = Document.query.filter_by(id=doc_id, tenant_id=tenant_id).first()
@@ -346,7 +346,7 @@ def delete_doc(doc_id):
 
 # ─── Ask (RAG) ───────────────────────────────────────────────
 @app.post("/api/ask")
-@require_auth(optional=True)
+@require_auth()
 def api_ask():
     t0 = time.perf_counter()
     data = request.get_json(force=True, silent=True) or {}
@@ -389,16 +389,28 @@ def api_ask():
             if m.role in ("user", "assistant")
         ]
 
+    # Credit check
+    ok, msg = _check_credits(user, Config.CREDITS_PER_ASK)
+    if not ok:
+        return jsonify({"error": msg, "credits": user.credits}), 402
+
+    # Query rewriting — expand pronouns/references into standalone query
+    llm = get_llm()
+    search_query = llm.rewrite_query(question, history)
+
     # Hybrid retrieval
     vs = get_vs()
     passages = vs.hybrid_search(
-        question, tenant_id=tenant_id, top_k=Config.TOP_K
+        search_query, tenant_id=tenant_id, top_k=Config.TOP_K
     )
 
-    # Optional lightweight rerank (score already from RRF; truncate)
-    passages = passages[: Config.RERANK_TOP_K]
+    # Cross-encoder rerank with timeout fallback
+    passages = rerank(
+        question, passages,
+        top_k=Config.RERANK_TOP_K,
+        timeout_s=Config.RERANK_TIMEOUT_S,
+    )
 
-    llm = get_llm()
     answer, sources, usage = llm.generate_answer(question, passages, history=history)
 
     latency_ms = (time.perf_counter() - t0) * 1000
@@ -424,6 +436,26 @@ def api_ask():
         )
         db.session.commit()
 
+    # Memory graph extraction — entities/relationships from Q&A
+    try:
+        graph_data = llm.extract_graph(f"Q: {question}\nA: {answer}")
+        if graph_data.get("nodes"):
+            db.session.add(MemoryGraph(
+                tenant_id=tenant_id,
+                user_id=user.id if user else None,
+                conversation_id=conv.id if conv else None,
+                nodes=graph_data["nodes"],
+                edges=graph_data["edges"],
+            ))
+            db.session.commit()
+    except Exception as e:
+        logger.debug("Memory graph extraction skipped: %s", e)
+
+    # Deduct credits for successful ask
+    balance = _deduct_credits(user, Config.CREDITS_PER_ASK, "ask", {
+        "conversation_id": conv.id if conv else None,
+    })
+
     return jsonify(
         {
             "answer": answer,
@@ -432,6 +464,9 @@ def api_ask():
             "latency_ms": round(latency_ms, 1),
             "usage": usage,
             "retrieved": len(passages),
+            "credits": balance,
+            "max_credits": user.max_credits,
+            "search_query": search_query if search_query != question else None,
         }
     )
 
