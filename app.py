@@ -59,13 +59,27 @@ CORS(app, supports_credentials=True)
 
 db.init_app(app)
 
-# Rate limiter
-limiter = Limiter(
-    key_func=get_remote_address,
-    app=app,
-    default_limits=[Config.RATELIMIT_DEFAULT],
-    storage_uri=Config.REDIS_URL or "memory://",
-)
+# Rate limiter — fall back to in-memory if Redis is configured but unavailable
+_limiter_storage = Config.REDIS_URL or "memory://"
+try:
+    limiter = Limiter(
+        key_func=get_remote_address,
+        app=app,
+        default_limits=[Config.RATELIMIT_DEFAULT],
+        storage_uri=_limiter_storage,
+    )
+except Exception as e:
+    logger.warning(
+        "Rate limiter storage '%s' unavailable, falling back to memory: %s",
+        _limiter_storage,
+        e,
+    )
+    limiter = Limiter(
+        key_func=get_remote_address,
+        app=app,
+        default_limits=[Config.RATELIMIT_DEFAULT],
+        storage_uri="memory://",
+    )
 
 # Singletons (lazy)
 _vs: VectorStore | None = None
