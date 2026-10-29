@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>DocuLoom — Campus Helpdesk RAG</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <div id="app">
+    <!-- Top bar -->
+    <header class="topbar">
+      <div class="brand">
+        <span class="logo">📜</span>
+        <div>
+          <h1>DocuLoom</h1>
+          <p class="tag">Campus Helpdesk · RAG with citations</p>
+        </div>
+      </div>
+      <div class="top-actions">
+        <button id="themeBtn" class="btn btn-ghost" title="Toggle theme">◐</button>
+        <button id="authBtn" class="btn btn-primary">Sign in</button>
+      </div>
+    </header>
+
+    <main class="layout">
+      <!-- Sidebar -->
+      <aside class="sidebar">
+        <section class="panel">
+          <h2>Documents</h2>
+          <div id="dropzone" class="dropzone">
+            <p>Drop PDF / TXT here</p>
+            <p class="muted">or click to browse</p>
+            <input type="file" id="fileInput" accept=".pdf,.txt,.md" hidden />
+          </div>
+          <div id="uploadStatus" class="status"></div>
+          <ul id="docList" class="doc-list"></ul>
+        </section>
+
+        <section class="panel meta-panel">
+          <h2>Session</h2>
+          <div class="meta-row"><span>Tenant</span><code id="tenantLabel">campus</code></div>
+          <div class="meta-row"><span>User</span><code id="userLabel">guest</code></div>
+          <div class="meta-row"><span>Latency</span><code id="latLabel">—</code></div>
+        </section>
+      </aside>
+
+      <!-- Chat -->
+      <section class="chat-panel">
+        <div id="messages" class="messages">
+          <div class="msg assistant">
+            <div class="bubble">
+              <p>Hi — I'm <strong>DocuLoom</strong>. Ask anything about campus rules, circulars, or syllabi. Answers come only from uploaded documents and always include citations.</p>
+            </div>
+          </div>
+        </div>
+        <form id="askForm" class="ask-form">
+          <textarea id="question" rows="2" placeholder="e.g. What is the attendance requirement for exams?" required></textarea>
+          <button type="submit" class="btn btn-primary btn-ask" id="askBtn">Ask</button>
+        </form>
+      </section>
+    </main>
+  </div>
+
+  <!-- Auth modal -->
+  <div id="authModal" class="modal hidden">
+    <div class="modal-card">
+      <h2 id="authTitle">Sign in</h2>
+      <form id="authForm">
+        <label>Email<input type="email" id="authEmail" required /></label>
+        <label>Password<input type="password" id="authPassword" required minlength="6" /></label>
+        <label id="nameLabel" class="hidden">Display name<input type="text" id="authName" /></label>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-ghost" id="toggleAuthMode">Need an account?</button>
+          <button type="submit" class="btn btn-primary" id="authSubmit">Sign in</button>
+        </div>
+      </form>
+      <button class="modal-close" id="closeAuth">×</button>
+    </div>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
