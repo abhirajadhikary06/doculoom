@@ -242,3 +242,132 @@ Rules:
         except Exception as e:
             logger.debug("Graph extraction failed: %s", e)
         return {"nodes": [], "edges": []}
+
+    # ── Temporal / historical answer generation ──────────────────────────────
+    TEMPORAL_PROMPT_SUFFIX = """
+When the question references a specific year or time period (e.g. "in 2024",
+"as of 2025"), answer ONLY using passages from that time period if available.
+If you find both an older and newer version of a policy, clearly state both
+and which one was current at the referenced time.
+"""
+
+    def generate_answer_with_context(
+        self,
+        question: str,
+        passages: List[Dict[str, Any]],
+        history: Optional[List[Dict[str, str]]] = None,
+        as_of: Optional[str] = None,
+        difficulty_class: Optional[str] = None,
+    ) -> Tuple[str, List[Dict[str, Any]], Dict]:
+        """
+        Extended answer generation with temporal context and difficulty-aware
+        prompt adjustment.
+        """
+        if not passages:
+            return (
+                "I don't know based on the available campus documents.",
+                [],
+                {},
+            )
+
+        context = _format_context(passages)
+
+        # Add temporal context to user message if as_of is set
+        temporal_note = ""
+        if as_of:
+            temporal_note = f"\n\nIMPORTANT: Answer as of {as_of}. Use only documents valid at that time."
+
+        # Add temporal suffix to system prompt for historical questions
+        system = SYSTEM_PROMPT
+        if difficulty_class == "temporal_comparison" or as_of:
+            system = SYSTEM_PROMPT + self.TEMPORAL_PROMPT_SUFFIX
+
+        user_content = (
+            f"Document passages:\n\n{context}\n\n"
+            f"Question: {question}{temporal_note}\n\n"
+            "Answer using only the passages above. Include inline [filename, page N] citations."
+        )
+
+        messages: List[Dict[str, str]] = [{"role": "system", "content": system}]
+        if history:
+            messages.extend(
+                _trim_history(
+                    history,
+                    token_budget=Config.HISTORY_TOKEN_BUDGET,
+                    max_turns=Config.HISTORY_TURNS,
+                )
+            )
+        messages.append({"role": "user", "content": user_content})
+
+        try:
+            answer, usage = self._chat(messages)
+        except Exception as e:
+            logger.error("Groq generation failed: %s", e)
+            return (
+                "I don't know based on the available campus documents. (generation error)",
+                [],
+                {},
+            )
+
+        sources = []
+        seen = set()
+        for p in passages:
+            key = (p.get("filename"), p.get("page_start"), p.get("chunk_index"))
+            if key in seen:
+                continue
+            seen.add(key)
+            sources.append(
+                {
+                    "filename": p.get("filename"),
+                    "page": p.get("page_start"),
+                    "page_end": p.get("page_end"),
+                    "chunk_index": p.get("chunk_index"),
+                    "document_id": p.get("document_id"),
+                    "score": round(p.get("score", 0), 4),
+                    "preview": (p.get("text_preview") or p.get("text", ""))[:180],
+                    "trust_score": p.get("trust_score"),
+                    "temporal_warning": p.get("temporal_warning"),
+                }
+            )
+
+        if re.search(r"i don't know", answer, re.I) and len(answer) < 120:
+            return answer, sources, usage
+
+        return answer, sources, usage
+
+    # ── Claim extraction for evidence verification ────────────────────────────
+    CLAIM_EXTRACT_PROMPT = """Extract the factual claims from this answer text as a JSON list.
+Each claim is a short, self-contained factual statement.
+
+Return ONLY valid JSON:
+{"claims": ["claim 1", "claim 2", ...]}
+
+Rules:
+- Maximum 10 claims
+- Only factual statements (not meta-commentary)
+- Each claim must be a complete sentence
+- Do NOT include citation markers"""
+
+    def extract_claims_llm(self, answer: str) -> List[str]:
+        """Use LLM to extract atomic claims from an answer (for evidence verification)."""
+        if not self.client:
+            return []
+        try:
+            import json
+            messages = [
+                {"role": "system", "content": self.CLAIM_EXTRACT_PROMPT},
+                {"role": "user", "content": f"Answer text:\n{answer[:2000]}"},
+            ]
+            raw, _ = self._chat(messages, temperature=0.0)
+            raw = raw.strip()
+            if raw.startswith("```"):
+                raw = raw.split("\n", 1)[1] if "\n" in raw else raw[3:]
+                if raw.endswith("```"):
+                    raw = raw[:-3]
+                raw = raw.strip()
+            data = json.loads(raw)
+            claims = data.get("claims", [])
+            return [c for c in claims if isinstance(c, str) and len(c) > 10][:10]
+        except Exception as e:
+            logger.debug("LLM claim extraction failed: %s", e)
+            return []

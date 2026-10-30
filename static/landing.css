@@ -1,0 +1,508 @@
+/* ═══════════════════════════════════════════════════════════════
+   DocuLoom Landing Page — Neobrutalism
+   Extends the base style.css variables and component classes.
+═══════════════════════════════════════════════════════════════ */
+
+/* ── Layout reset for landing (full-width sections) ─────────────────────── */
+.landing-body #app { max-width: none; padding: 0; }
+
+/* ── Top bar ─────────────────────────────────────────────────────────────── */
+.lp-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 32px;
+  background: var(--surface);
+  border-bottom: var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 30;
+}
+
+@media (max-width: 600px) {
+  .lp-topbar { padding: 12px 16px; }
+}
+
+/* ── Hero ────────────────────────────────────────────────────────────────── */
+.lp-hero {
+  background: var(--surface);
+  border-bottom: var(--border);
+  padding: 72px 32px 64px;
+}
+
+.lp-hero-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 56px;
+  align-items: center;
+}
+
+@media (max-width: 900px) {
+  .lp-hero-inner { grid-template-columns: 1fr; gap: 40px; }
+  .lp-hero { padding: 48px 20px 40px; }
+}
+
+.lp-eyebrow {
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 16px;
+}
+
+.lp-headline {
+  font-size: clamp(2rem, 4vw, 3.2rem);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+  margin-bottom: 20px;
+}
+
+.lp-accent-word {
+  color: var(--accent);
+  /* Bold underline in neobrutalism style */
+  text-decoration: underline;
+  text-decoration-thickness: 4px;
+  text-underline-offset: 5px;
+}
+
+.lp-subhead {
+  font-size: 1.05rem;
+  color: var(--muted);
+  line-height: 1.6;
+  max-width: 480px;
+  margin-bottom: 32px;
+}
+
+.lp-cta-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.lp-cta-main {
+  font-size: 1rem;
+  padding: 12px 24px;
+  text-decoration: none;
+  border-radius: 10px;
+  box-shadow: 4px 4px 0 var(--ink);
+  transition: transform 0.08s, box-shadow 0.08s;
+}
+.lp-cta-main:hover { transform: translate(-2px,-2px); box-shadow: 6px 6px 0 var(--ink); }
+.lp-cta-main:active { transform: translate(1px,1px); box-shadow: 2px 2px 0 var(--ink); }
+
+.lp-cta-secondary {
+  font-size: 0.95rem;
+  padding: 11px 20px;
+  text-decoration: none;
+  border-radius: 10px;
+}
+
+/* ── Mock chat window ────────────────────────────────────────────────────── */
+.lp-hero-visual {
+  display: flex;
+  justify-content: center;
+}
+
+.lp-chat-mock {
+  width: 100%;
+  max-width: 440px;
+  background: var(--bg);
+  border: var(--border);
+  box-shadow: 8px 8px 0 var(--ink);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.lp-mock-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 14px;
+  background: var(--surface);
+  border-bottom: var(--border);
+}
+
+.lp-mock-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 1.5px solid var(--ink);
+  display: inline-block;
+}
+
+.lp-mock-msg {
+  margin: 10px 14px;
+  padding: 10px 13px;
+  border: var(--border);
+  border-radius: 10px;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  box-shadow: 2px 2px 0 var(--ink);
+}
+
+.lp-mock-user {
+  background: var(--accent);
+  color: #fff;
+  align-self: flex-end;
+  margin-left: 48px;
+}
+
+.lp-mock-bot {
+  background: var(--surface);
+  margin-right: 24px;
+}
+
+.lp-mock-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.lp-mock-input {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 14px;
+  background: var(--surface);
+  border-top: var(--border);
+  font-size: 0.82rem;
+  color: var(--muted);
+  font-style: italic;
+}
+
+.lp-mock-cursor {
+  display: inline-block;
+  width: 2px;
+  height: 14px;
+  background: var(--accent);
+  animation: blink 1s infinite;
+  vertical-align: middle;
+}
+
+/* ── Sections (shared wrapper) ───────────────────────────────────────────── */
+.lp-section {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 72px 32px;
+}
+
+@media (max-width: 640px) {
+  .lp-section { padding: 48px 20px; }
+}
+
+.lp-section-label {
+  font-family: var(--mono);
+  font-size: 0.73rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+  margin-bottom: 10px;
+}
+
+.lp-section-title {
+  font-size: clamp(1.5rem, 3vw, 2.2rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-bottom: 48px;
+  max-width: 600px;
+}
+
+/* ── Feature cards grid ──────────────────────────────────────────────────── */
+.lp-features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.lp-feature-card {
+  background: var(--surface);
+  border: var(--border);
+  box-shadow: var(--shadow);
+  border-radius: var(--radius);
+  padding: 22px 20px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+
+.lp-feature-card:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0 var(--ink);
+}
+
+.lp-fc-accent  { border-left: 6px solid var(--accent); }
+.lp-fc-accent2 { border-left: 6px solid var(--accent-2); }
+
+.lp-fc-icon {
+  font-size: 1.5rem;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.lp-feature-card h3 {
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.lp-feature-card p {
+  font-size: 0.85rem;
+  color: var(--muted);
+  line-height: 1.55;
+  flex: 1;
+}
+
+.lp-fc-tag {
+  display: inline-block;
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  padding: 2px 8px;
+  border: 1.5px solid var(--ink);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--muted);
+  align-self: flex-start;
+  margin-top: 4px;
+}
+
+/* ── Stats bar ───────────────────────────────────────────────────────────── */
+.lp-stats-bar {
+  background: var(--ink);
+  color: var(--surface);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0;
+  flex-wrap: wrap;
+  padding: 40px 32px;
+  border-top: var(--border);
+  border-bottom: var(--border);
+}
+
+[data-theme="dark"] .lp-stats-bar {
+  background: var(--surface);
+  color: var(--ink);
+  border-color: var(--ink);
+}
+
+.lp-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0 48px;
+}
+
+@media (max-width: 640px) {
+  .lp-stat { padding: 16px 24px; }
+  .lp-stat-divider { display: none; }
+}
+
+.lp-stat-val {
+  font-size: 2.8rem;
+  font-weight: 700;
+  font-family: var(--mono);
+  line-height: 1;
+  color: var(--accent);
+}
+
+.lp-stat-label {
+  font-size: 0.8rem;
+  opacity: 0.7;
+  margin-top: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+[data-theme="dark"] .lp-stat-label { opacity: 0.6; }
+
+.lp-stat-divider {
+  width: 3px;
+  height: 60px;
+  background: currentColor;
+  opacity: 0.15;
+}
+
+/* ── How it works ────────────────────────────────────────────────────────── */
+.lp-steps {
+  display: flex;
+  gap: 0;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.lp-step {
+  flex: 1;
+  min-width: 200px;
+  background: var(--surface);
+  border: var(--border);
+  box-shadow: var(--shadow);
+  border-radius: var(--radius);
+  padding: 24px 22px;
+}
+
+.lp-step-arrow {
+  font-size: 1.8rem;
+  font-weight: 700;
+  padding: 32px 10px 0;
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+@media (max-width: 700px) {
+  .lp-step-arrow { display: none; }
+  .lp-steps { gap: 12px; }
+  .lp-step { min-width: 100%; }
+}
+
+.lp-step-num {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--accent);
+  margin-bottom: 10px;
+}
+
+.lp-step h3 {
+  font-size: 1rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.lp-step p {
+  font-size: 0.85rem;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+/* ── Tech stack ──────────────────────────────────────────────────────────── */
+.lp-stack-section { border-top: 2px dashed color-mix(in srgb, var(--ink) 20%, transparent); }
+
+.lp-stack-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.lp-stack-chip {
+  font-family: var(--mono);
+  font-size: 0.82rem;
+  font-weight: 500;
+  padding: 8px 16px;
+  border: var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: 2px 2px 0 var(--ink);
+  white-space: nowrap;
+}
+
+.lp-stack-note {
+  font-size: 0.83rem;
+  color: var(--muted);
+  max-width: 540px;
+  line-height: 1.6;
+}
+
+/* ── Final CTA ───────────────────────────────────────────────────────────── */
+.lp-final-cta {
+  background: var(--accent);
+  border-top: var(--border);
+  padding: 72px 32px;
+}
+
+.lp-final-cta-inner {
+  max-width: 640px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.lp-final-cta h2 {
+  font-size: clamp(1.8rem, 3.5vw, 2.8rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #fff;
+  margin-bottom: 12px;
+}
+
+.lp-final-cta p {
+  font-size: 1rem;
+  color: rgba(255,255,255,0.82);
+  margin-bottom: 32px;
+  line-height: 1.5;
+}
+
+/* Override btn-primary inside orange bg so it inverts */
+.lp-final-cta .btn-primary {
+  background: var(--ink);
+  color: var(--surface);
+  font-size: 1rem;
+  padding: 13px 28px;
+  text-decoration: none;
+  display: inline-block;
+  box-shadow: 4px 4px 0 rgba(0,0,0,0.35);
+}
+
+.lp-final-cta .btn-primary:hover {
+  transform: translate(-2px,-2px);
+  box-shadow: 6px 6px 0 rgba(0,0,0,0.35);
+}
+
+[data-theme="dark"] .lp-final-cta .btn-primary {
+  background: var(--surface);
+  color: var(--ink);
+}
+
+/* ── Footer ──────────────────────────────────────────────────────────────── */
+.lp-footer {
+  background: var(--surface);
+  border-top: var(--border);
+  padding: 28px 32px;
+}
+
+.lp-footer-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.lp-footer-links {
+  display: flex;
+  gap: 20px;
+}
+
+.lp-footer-links a {
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.lp-footer-links a:hover { color: var(--ink); text-decoration: underline; }
+
+.lp-footer-copy {
+  font-size: 0.78rem;
+  color: var(--muted);
+  font-family: var(--mono);
+}
+
+/* ── Scroll reveal (no JS — CSS only, subtle fade-in via animation) ──────── */
+@keyframes fadeSlideUp {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.lp-hero-text  { animation: fadeSlideUp 0.5s ease both; }
+.lp-hero-visual{ animation: fadeSlideUp 0.5s 0.12s ease both; }
+.lp-feature-card { animation: fadeSlideUp 0.4s ease both; }

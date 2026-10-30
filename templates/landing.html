@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>DocuLoom — Campus Knowledge Intelligence Engine</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/style.css" />
+  <link rel="stylesheet" href="/static/landing.css" />
+</head>
+<body class="landing-body">
+
+  <!-- ── Top bar ──────────────────────────────────────────────────────────── -->
+  <header class="lp-topbar">
+    <div class="brand">
+      <span class="logo"></span>
+      <div>
+        <h1>DocuLoom</h1>
+        <p class="tag">Campus Knowledge Intelligence Engine</p>
+      </div>
+    </div>
+    <div class="top-actions">
+      <button id="lpThemeBtn" class="btn btn-ghost" title="Toggle theme">◐</button>
+      <a href="/app" class="btn btn-primary">Open App →</a>
+    </div>
+  </header>
+
+  <!-- ── Hero ─────────────────────────────────────────────────────────────── -->
+  <section class="lp-hero">
+    <div class="lp-hero-inner">
+      <div class="lp-hero-text">
+        <p class="lp-eyebrow">Open-source · Multi-tenant · Verifiable RAG</p>
+        <h2 class="lp-headline">
+          Your campus documents,<br/>
+          <span class="lp-accent-word">actually understood.</span>
+        </h2>
+        <p class="lp-subhead">
+          DocuLoom doesn't just search PDFs. It reasons about time, verifies every claim it makes,
+          detects contradictions between circulars, and tells you exactly where each answer came from.
+        </p>
+        <div class="lp-cta-row">
+          <a href="/app" class="btn btn-primary lp-cta-main">Open the app →</a>
+          <a href="https://github.com/your-org/doculoom" class="btn lp-cta-secondary" target="_blank" rel="noopener">View on GitHub</a>
+        </div>
+      </div>
+      <div class="lp-hero-visual" aria-hidden="true">
+        <div class="lp-chat-mock">
+          <div class="lp-mock-bar">
+            <span class="lp-mock-dot" style="background:#ff5c35"></span>
+            <span class="lp-mock-dot" style="background:#ffd700"></span>
+            <span class="lp-mock-dot" style="background:#1f9d55"></span>
+            <span style="font-size:0.72rem;color:var(--muted);margin-left:8px;font-family:var(--mono)">doculoom · chat</span>
+          </div>
+          <div class="lp-mock-msg lp-mock-user">What was the attendance rule in 2024?</div>
+          <div class="lp-mock-msg lp-mock-bot">
+            In 2024 the minimum attendance requirement was <strong>75%</strong> per semester.
+            <span class="cite">[circular-2024.pdf, page 2]</span>
+            <div class="lp-mock-badges">
+              <span class="intel-badge strategy">temporal</span>
+              <span class="intel-badge verified">2/2 claims verified</span>
+            </div>
+          </div>
+          <div class="lp-mock-msg lp-mock-user">Has it changed since then?</div>
+          <div class="lp-mock-msg lp-mock-bot">
+            Yes — as of August 2025 the requirement increased to <strong>80%</strong>.
+            <span class="cite">[circular-2025.pdf, page 1]</span>
+            <div class="lp-mock-badges">
+              <span class="intel-badge temporal">superseded doc detected</span>
+            </div>
+          </div>
+          <div class="lp-mock-input">
+            <span>Ask anything about campus rules…</span>
+            <span class="lp-mock-cursor"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Feature strip ────────────────────────────────────────────────────── -->
+  <section class="lp-section">
+    <p class="lp-section-label">16 intelligence capabilities</p>
+    <h2 class="lp-section-title">More than a chatbot. A knowledge system.</h2>
+    <div class="lp-features-grid">
+
+      <div class="lp-feature-card lp-fc-accent">
+        <div class="lp-fc-icon">⏱</div>
+        <h3>Temporal Reasoning</h3>
+        <p>Understands document timelines. Answers "what was the rule in 2024?" differently from "what is the rule today?" and shows you the full supersession chain.</p>
+        <span class="lp-fc-tag">Feature A</span>
+      </div>
+
+      <div class="lp-feature-card">
+        <div class="lp-fc-icon">✅</div>
+        <h3>Evidence Verification</h3>
+        <p>Every claim in an answer is matched against a source passage and classified as supported, unsupported, or insufficient. Citation coverage is always shown.</p>
+        <span class="lp-fc-tag">Feature B</span>
+      </div>
+
+      <div class="lp-feature-card">
+        <div class="lp-fc-icon">🧭</div>
+        <h3>Adaptive Retrieval</h3>
+        <p>Picks the right retrieval strategy for each question — keyword search for facts, semantic search for explanations, temporal search for historical queries.</p>
+        <span class="lp-fc-tag">Feature C</span>
+      </div>
+
+      <div class="lp-feature-card">
+        <div class="lp-fc-icon">⚡</div>
+        <h3>Impact Analysis</h3>
+        <p>After every upload, automatically detects which existing documents are affected, extracts cross-document relationships, and flags potential conflicts.</p>
+        <span class="lp-fc-tag">Feature D</span>
+      </div>
+
+      <div class="lp-feature-card">
+        <div class="lp-fc-icon">🔍</div>
+        <h3>Provenance Explorer</h3>
+        <p>Every answer is fully traceable. See the exact passages retrieved, their scores, which claim each one supports, and replay any historical query.</p>
+        <span class="lp-fc-tag">Features E + I</span>
+      </div>
+
+      <div class="lp-feature-card">
+        <div class="lp-fc-icon">💾</div>
+        <h3>Semantic Cache</h3>
+        <p>Reuses semantically similar answers only when the document versions and tenant context match. Prevents stale answers after document updates.</p>
+        <span class="lp-fc-tag">Feature F</span>
+      </div>
+
+      <div class="lp-feature-card">
+        <div class="lp-fc-icon">🩺</div>
+        <h3>Self-Healing Ingestion</h3>
+        <p>Measures text coverage, OCR confidence, and chunk quality on every upload. Quarantines low-quality documents and supports targeted reprocessing.</p>
+        <span class="lp-fc-tag">Feature G</span>
+      </div>
+
+      <div class="lp-feature-card">
+        <div class="lp-fc-icon">⚗️</div>
+        <h3>Counterfactual Testing</h3>
+        <p>Test whether document changes produce the expected answer changes — without touching production data. Detects retrieval regressions before they reach users.</p>
+        <span class="lp-fc-tag">Feature H</span>
+      </div>
+
+      <div class="lp-feature-card">
+        <div class="lp-fc-icon">🔀</div>
+        <h3>Query Decomposition</h3>
+        <p>Complex multi-part questions are split into independent sub-queries, each retrieved separately, then synthesised into one consistent cited answer.</p>
+        <span class="lp-fc-tag">Feature J</span>
+      </div>
+
+      <div class="lp-feature-card lp-fc-accent2">
+        <div class="lp-fc-icon">⚠️</div>
+        <h3>Contradiction Discovery</h3>
+        <p>Proactively scans all documents and surfaces conflicting percentages, amounts, and policy statements — with severity levels and a one-click resolve action.</p>
+        <span class="lp-fc-tag">Feature K</span>
+      </div>
+
+      <div class="lp-feature-card">
+        <div class="lp-fc-icon">🕐</div>
+        <h3>Knowledge Expiration</h3>
+        <p>Tracks expiry dates, effective periods, and supersession status. Flags documents for admin review before they silently give students outdated answers.</p>
+        <span class="lp-fc-tag">Feature L</span>
+      </div>
+
+      <div class="lp-feature-card">
+        <div class="lp-fc-icon">📡</div>
+        <h3>Drift Detection</h3>
+        <p>Runs Recall@K, MRR, and nDCG against a labeled baseline after every index change. Fires an alert when retrieval quality drops beyond a configurable threshold.</p>
+        <span class="lp-fc-tag">Feature M</span>
+      </div>
+
+      <div class="lp-feature-card">
+        <div class="lp-fc-icon">🏅</div>
+        <h3>Document Trust Scoring</h3>
+        <p>Each document gets a transparent trust score from 8 individual factors — source authority, recency, validity, extraction quality — not an opaque AI number.</p>
+        <span class="lp-fc-tag">Feature N</span>
+      </div>
+
+      <div class="lp-feature-card">
+        <div class="lp-fc-icon">📊</div>
+        <h3>Difficulty Estimation</h3>
+        <p>Classifies every question before retrieval. Simple factual lookups skip the expensive reranker. Multi-document questions automatically trigger decomposition.</p>
+        <span class="lp-fc-tag">Feature O</span>
+      </div>
+
+      <div class="lp-feature-card">
+        <div class="lp-fc-icon">🗺</div>
+        <h3>Knowledge Gap Discovery</h3>
+        <p>Tracks every unanswered question, clusters them semantically, and generates admin-facing reports telling you exactly which documents to upload next.</p>
+        <span class="lp-fc-tag">Feature P</span>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ── Stats bar ─────────────────────────────────────────────────────────── -->
+  <section class="lp-stats-bar">
+    <div class="lp-stat">
+      <span class="lp-stat-val">16</span>
+      <span class="lp-stat-label">intelligence features</span>
+    </div>
+    <div class="lp-stat-divider"></div>
+    <div class="lp-stat">
+      <span class="lp-stat-val">35+</span>
+      <span class="lp-stat-label">new API endpoints</span>
+    </div>
+    <div class="lp-stat-divider"></div>
+    <div class="lp-stat">
+      <span class="lp-stat-val">115</span>
+      <span class="lp-stat-label">automated tests</span>
+    </div>
+    <div class="lp-stat-divider"></div>
+    <div class="lp-stat">
+      <span class="lp-stat-val">∞</span>
+      <span class="lp-stat-label">documents supported</span>
+    </div>
+  </section>
+
+  <!-- ── How it works ─────────────────────────────────────────────────────── -->
+  <section class="lp-section lp-how">
+    <p class="lp-section-label">under the hood</p>
+    <h2 class="lp-section-title">Every answer is verifiable.</h2>
+    <div class="lp-steps">
+      <div class="lp-step">
+        <div class="lp-step-num">01</div>
+        <h3>Upload your documents</h3>
+        <p>PDFs, circulars, syllabi, policies. The ingestion pipeline extracts text, measures quality, detects dates and entities, and analyses cross-document impact — all automatically.</p>
+      </div>
+      <div class="lp-step-arrow">→</div>
+      <div class="lp-step">
+        <div class="lp-step-num">02</div>
+        <h3>Ask in plain English</h3>
+        <p>DocuLoom classifies your question, picks the right retrieval strategy, decomposes complex queries, and applies temporal filters — before a single LLM token is generated.</p>
+      </div>
+      <div class="lp-step-arrow">→</div>
+      <div class="lp-step">
+        <div class="lp-step-num">03</div>
+        <h3>Get a verified answer</h3>
+        <p>Every claim is aligned to a source passage, the evidence is verified, and the full retrieval trace is stored. You can replay any historical answer and compare it to today's.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Tech stack ────────────────────────────────────────────────────────── -->
+  <section class="lp-section lp-stack-section">
+    <p class="lp-section-label">built with</p>
+    <h2 class="lp-section-title">Production-grade stack, zero new infrastructure.</h2>
+    <div class="lp-stack-grid">
+      <div class="lp-stack-chip">Flask 3.0</div>
+      <div class="lp-stack-chip">Groq · Llama 3.3 70B</div>
+      <div class="lp-stack-chip">Qdrant hybrid RRF</div>
+      <div class="lp-stack-chip">Neon PostgreSQL</div>
+      <div class="lp-stack-chip">FastEmbed</div>
+      <div class="lp-stack-chip">Cross-encoder reranker</div>
+      <div class="lp-stack-chip">OCR.space + Tesseract</div>
+      <div class="lp-stack-chip">JWT multi-tenancy</div>
+    </div>
+    <p class="lp-stack-note">No Redis required. No graph database. No vector-DB vendor lock-in. Runs on a single server or Heroku free tier.</p>
+  </section>
+
+  <!-- ── Final CTA ─────────────────────────────────────────────────────────── -->
+  <section class="lp-final-cta">
+    <div class="lp-final-cta-inner">
+      <h2>Ready to try it?</h2>
+      <p>Upload a campus document and ask your first question in under two minutes.</p>
+      <a href="/app" class="btn btn-primary lp-cta-main">Open DocuLoom →</a>
+    </div>
+  </section>
+
+  <!-- ── Footer ────────────────────────────────────────────────────────────── -->
+  <footer class="lp-footer">
+    <div class="lp-footer-inner">
+      <div class="brand">
+        <span class="logo" style="font-size:1.4rem"></span>
+        <div>
+          <strong>DocuLoom</strong>
+          <p class="tag">Campus Knowledge Intelligence Engine</p>
+        </div>
+      </div>
+      <div class="lp-footer-links">
+        <a href="/app">App</a>
+        <a href="https://github.com/your-org/doculoom" target="_blank" rel="noopener">GitHub</a>
+        <a href="/health">Status</a>
+      </div>
+      <p class="lp-footer-copy">MIT License · Open source</p>
+    </div>
+  </footer>
+
+  <script>
+    // Theme toggle (mirrors app.js behaviour)
+    const theme = localStorage.getItem("dl_theme") || "light";
+    document.documentElement.setAttribute("data-theme", theme);
+    document.getElementById("lpThemeBtn").addEventListener("click", () => {
+      const next = document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark";
+      document.documentElement.setAttribute("data-theme", next);
+      localStorage.setItem("dl_theme", next);
+    });
+  </script>
+</body>
+</html>

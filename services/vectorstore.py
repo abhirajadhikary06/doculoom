@@ -241,3 +241,128 @@ class VectorStore:
                 exact=True,
             ).count
         return self.client.count(collection_name=self.collection, exact=True).count
+
+    def dense_search(
+        self,
+        query: str,
+        tenant_id: str,
+        top_k: int = 8,
+        document_ids: Optional[List[str]] = None,
+    ) -> List[Dict[str, Any]]:
+        """Dense-only (embedding) search — used by adaptive retrieval planner."""
+        must = [
+            models.FieldCondition(
+                key="tenant_id",
+                match=models.MatchValue(value=tenant_id),
+            )
+        ]
+        if document_ids:
+            must.append(
+                models.FieldCondition(
+                    key="document_id",
+                    match=models.MatchAny(any=document_ids),
+                )
+            )
+        query_filter = models.Filter(must=must)
+
+        try:
+            response = self.client.query_points(
+                collection_name=self.collection,
+                query=models.Document(text=query, model=DENSE_MODEL),
+                using="dense",
+                query_filter=query_filter,
+                limit=top_k,
+                with_payload=True,
+            )
+            points = response.points
+        except Exception as e:
+            logger.warning("Dense-only search failed: %s", e)
+            return []
+
+        results = []
+        for p in points:
+            pl = p.payload or {}
+            results.append(
+                {
+                    "id": str(p.id),
+                    "score": float(p.score or 0),
+                    "text": pl.get("text", ""),
+                    "filename": pl.get("filename", ""),
+                    "document_id": pl.get("document_id", ""),
+                    "page_start": pl.get("page_start", 1),
+                    "page_end": pl.get("page_end", 1),
+                    "chunk_index": pl.get("chunk_index", 0),
+                    "text_preview": pl.get("text_preview", ""),
+                }
+            )
+        return results
+
+    def count_document_chunks(self, document_id: str, tenant_id: str) -> int:
+        """Count Qdrant points for a specific document — used by ingestion quality check."""
+        try:
+            result = self.client.count(
+                collection_name=self.collection,
+                count_filter=models.Filter(
+                    must=[
+                        models.FieldCondition(
+                            key="document_id",
+                            match=models.MatchValue(value=document_id),
+                        ),
+                        models.FieldCondition(
+                            key="tenant_id",
+                            match=models.MatchValue(value=tenant_id),
+                        ),
+                    ]
+                ),
+                exact=True,
+            )
+            return result.count
+        except Exception as e:
+            logger.warning("count_document_chunks failed: %s", e)
+            return -1
+
+    def get_document_chunks(
+        self,
+        document_id: str,
+        tenant_id: str,
+        limit: int = 200,
+    ) -> List[Dict[str, Any]]:
+        """Retrieve all chunks for a document — used by counterfactual testing."""
+        try:
+            response = self.client.scroll(
+                collection_name=self.collection,
+                scroll_filter=models.Filter(
+                    must=[
+                        models.FieldCondition(
+                            key="document_id",
+                            match=models.MatchValue(value=document_id),
+                        ),
+                        models.FieldCondition(
+                            key="tenant_id",
+                            match=models.MatchValue(value=tenant_id),
+                        ),
+                    ]
+                ),
+                limit=limit,
+                with_payload=True,
+                with_vectors=False,
+            )
+            points = response[0]
+        except Exception as e:
+            logger.warning("get_document_chunks failed: %s", e)
+            return []
+
+        results = []
+        for p in points:
+            pl = p.payload or {}
+            results.append(
+                {
+                    "id": str(p.id),
+                    "text": pl.get("text", ""),
+                    "filename": pl.get("filename", ""),
+                    "document_id": pl.get("document_id", ""),
+                    "page_start": pl.get("page_start", 1),
+                    "chunk_index": pl.get("chunk_index", 0),
+                }
+            )
+        return sorted(results, key=lambda x: x["chunk_index"])

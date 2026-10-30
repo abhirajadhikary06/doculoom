@@ -1,10 +1,11 @@
 """SQLAlchemy models for multi-tenant DocuLoom (Neon Postgres)."""
 from datetime import datetime, timezone
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import Index, text
-from sqlalchemy.dialects.postgresql import JSONB, UUID
+from sqlalchemy import Index, text, JSON
+from sqlalchemy.dialects.postgresql import JSONB as _PG_JSONB
 from sqlalchemy import String, Text, Integer, Float, Boolean, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
+from sqlalchemy.types import TypeDecorator
 import uuid
 
 db = SQLAlchemy()
@@ -12,6 +13,21 @@ db = SQLAlchemy()
 
 def utcnow():
     return datetime.now(timezone.utc)
+
+
+class JSONB(TypeDecorator):
+    """
+    Dialect-aware JSON column.
+    - PostgreSQL  → native JSONB  (indexed, fast operators)
+    - SQLite/other → JSON         (development / test fallback)
+    """
+    impl = JSON
+    cache_ok = True
+
+    def load_dialect_impl(self, dialect):
+        if dialect.name == "postgresql":
+            return dialect.type_descriptor(_PG_JSONB())
+        return dialect.type_descriptor(JSON())
 
 
 class Tenant(db.Model):

@@ -77,6 +77,50 @@ class Config:
     REDIS_URL = os.getenv("REDIS_URL", "")
     RATELIMIT_DEFAULT = "60 per minute"
 
+    # ── Feature A: Temporal Knowledge Engine ────────────────────────────────
+    TEMPORAL_SUPERSESSION_CONFIDENCE = float(os.getenv("TEMPORAL_SUPERSESSION_CONFIDENCE", 0.65))
+
+    # ── Feature B: Evidence Verification ────────────────────────────────────
+    EVIDENCE_VERIFY_CLAIMS = os.getenv("EVIDENCE_VERIFY_CLAIMS", "true").lower() == "true"
+    EVIDENCE_MAX_CLAIMS = int(os.getenv("EVIDENCE_MAX_CLAIMS", 12))
+
+    # ── Feature C: Adaptive Retrieval Planner ───────────────────────────────
+    ADAPTIVE_RETRIEVAL = os.getenv("ADAPTIVE_RETRIEVAL", "true").lower() == "true"
+    TRUST_RERANK_WEIGHT = float(os.getenv("TRUST_RERANK_WEIGHT", 0.15))
+
+    # ── Feature F: Semantic Cache ────────────────────────────────────────────
+    CACHE_SEMANTIC_THRESHOLD = float(os.getenv("CACHE_SEMANTIC_THRESHOLD", 0.92))
+    CACHE_TTL_HOURS = int(os.getenv("CACHE_TTL_HOURS", 24))
+    MAX_CACHE_ENTRIES = int(os.getenv("MAX_CACHE_ENTRIES", 1000))
+    SEMANTIC_CACHE_ENABLED = os.getenv("SEMANTIC_CACHE_ENABLED", "true").lower() == "true"
+
+    # ── Feature G: Ingestion Quality ─────────────────────────────────────────
+    IQ_MIN_COVERAGE = float(os.getenv("IQ_MIN_COVERAGE", 0.5))
+    IQ_MIN_CHARS_PAGE = int(os.getenv("IQ_MIN_CHARS_PAGE", 50))
+    IQ_MAX_EMPTY_RATIO = float(os.getenv("IQ_MAX_EMPTY_RATIO", 0.3))
+    IQ_MIN_QUALITY = float(os.getenv("IQ_MIN_QUALITY", 0.4))
+
+    # ── Feature J: Query Decomposition ───────────────────────────────────────
+    DECOMPOSITION_ENABLED = os.getenv("DECOMPOSITION_ENABLED", "true").lower() == "true"
+    DECOMPOSITION_MAX_SUBQUESTIONS = int(os.getenv("DECOMPOSITION_MAX_SUBQUESTIONS", 4))
+
+    # ── Feature L: Knowledge Expiration ──────────────────────────────────────
+    EXPIRY_REVIEW_DAYS = int(os.getenv("EXPIRY_REVIEW_DAYS", 365))
+
+    # ── Feature M: Drift Detection ───────────────────────────────────────────
+    DRIFT_ALERT_THRESHOLD = float(os.getenv("DRIFT_ALERT_THRESHOLD", 0.15))
+    DRIFT_ON_INGEST = os.getenv("DRIFT_ON_INGEST", "false").lower() == "true"
+
+    # ── Feature P: Information Gaps ───────────────────────────────────────────
+    GAP_CLUSTER_THRESHOLD = float(os.getenv("GAP_CLUSTER_THRESHOLD", 0.80))
+
+    # ── Provenance / reproducibility ─────────────────────────────────────────
+    PROVENANCE_ENABLED = os.getenv("PROVENANCE_ENABLED", "true").lower() == "true"
+
+    # ── Impact analysis ───────────────────────────────────────────────────────
+    IMPACT_ANALYSIS_ENABLED = os.getenv("IMPACT_ANALYSIS_ENABLED", "true").lower() == "true"
+    IMPACT_ANALYSIS_BACKGROUND = os.getenv("IMPACT_ANALYSIS_BACKGROUND", "true").lower() == "true"
+
     @classmethod
     def ensure_dirs(cls):
         cls.CORPUS_DIR.mkdir(parents=True, exist_ok=True)

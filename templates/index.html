@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>DocuLoom — Campus Helpdesk RAG</title>
+  <title>DocuLoom — Campus Knowledge Intelligence Engine</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/static/style.css" />
@@ -13,13 +13,16 @@
     <!-- Top bar -->
     <header class="topbar">
       <div class="brand">
-        <span class="logo">📜</span>
-        <div>
-          <h1>DocuLoom</h1>
-          <p class="tag">Campus Helpdesk · RAG with citations</p>
-        </div>
+        <a href="/" style="display:flex;gap:12px;align-items:center;text-decoration:none;color:inherit;" title="Back to home">
+          <span class="logo"></span>
+          <div>
+            <h1>DocuLoom</h1>
+            <p class="tag">Campus Knowledge Intelligence Engine</p>
+          </div>
+        </a>
       </div>
       <div class="top-actions">
+        <button id="adminBtn" class="btn btn-ghost" title="Admin intelligence dashboard">⚙ Admin</button>
         <button id="themeBtn" class="btn btn-ghost" title="Toggle theme">◐</button>
         <button id="authBtn" class="btn btn-primary">Sign in</button>
       </div>
@@ -44,6 +47,13 @@
           <div class="meta-row"><span>Tenant</span><code id="tenantLabel">campus</code></div>
           <div class="meta-row"><span>User</span><code id="userLabel">guest</code></div>
           <div class="meta-row"><span>Latency</span><code id="latLabel">—</code></div>
+          <div class="meta-row">
+            <span>Mode</span>
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+              <input type="checkbox" id="v2Toggle" style="width:auto;margin:0" />
+              <code>v2 intelligence</code>
+            </label>
+          </div>
         </section>
       </aside>
 
@@ -53,6 +63,7 @@
           <div class="msg assistant">
             <div class="bubble">
               <p>Hi — I'm <strong>DocuLoom</strong>. Ask anything about campus rules, circulars, or syllabi. Answers come only from uploaded documents and always include citations.</p>
+              <p style="margin-top:6px;font-size:0.82rem;color:var(--muted)">Enable <strong>v2 intelligence</strong> mode in the sidebar to activate temporal reasoning, evidence verification, and adaptive retrieval.</p>
             </div>
           </div>
         </div>
@@ -64,7 +75,196 @@
     </main>
   </div>
 
-  <!-- Auth modal -->
+  <!-- ── Admin Intelligence Panel ──────────────────────────────────────── -->
+  <div id="adminPanel" class="admin-panel hidden">
+    <div class="admin-topbar">
+      <h1>⚙ Intelligence Dashboard</h1>
+      <button id="closeAdmin" class="btn btn-ghost">✕ Close</button>
+    </div>
+
+    <!-- Nav tabs -->
+    <div class="nav-tabs">
+      <button class="nav-tab active" data-tab="dashboard">Dashboard</button>
+      <button class="nav-tab" data-tab="conflicts">Conflicts</button>
+      <button class="nav-tab" data-tab="expiry">Expiry</button>
+      <button class="nav-tab" data-tab="quality">Ingestion Quality</button>
+      <button class="nav-tab" data-tab="gaps">Knowledge Gaps</button>
+      <button class="nav-tab" data-tab="trust">Trust Scores</button>
+      <button class="nav-tab" data-tab="drift">Drift Detection</button>
+      <button class="nav-tab" data-tab="provenance">Provenance</button>
+    </div>
+
+    <!-- Dashboard tab -->
+    <div id="tab-dashboard" class="admin-grid">
+      <div class="intel-card">
+        <h3>Document Health</h3>
+        <div class="stat-grid" id="docHealthStats">
+          <div class="stat-box"><div class="val loading-dots">…</div><div class="label">Ready</div></div>
+        </div>
+      </div>
+      <div class="intel-card">
+        <h3>Knowledge Gaps Summary</h3>
+        <div id="gapSummaryWidget"></div>
+      </div>
+      <div class="intel-card">
+        <h3>Conflicts</h3>
+        <div id="conflictSummaryWidget"></div>
+      </div>
+      <div class="intel-card">
+        <h3>Cache Performance</h3>
+        <div id="cacheMetricsWidget"></div>
+        <button class="btn btn-xs" id="invalidateCacheBtn" style="margin-top:10px">Invalidate Cache</button>
+      </div>
+      <div class="intel-card">
+        <h3>Latest Drift Run</h3>
+        <div id="driftSummaryWidget"></div>
+        <button class="btn btn-xs btn-primary" id="runDriftBtn" style="margin-top:10px">Run Drift Eval</button>
+      </div>
+      <div class="intel-card">
+        <h3>Expiry Summary</h3>
+        <div id="expirySummaryWidget"></div>
+        <button class="btn btn-xs" id="refreshExpiryBtn" style="margin-top:10px">Refresh Status</button>
+      </div>
+    </div>
+
+    <!-- Conflicts tab -->
+    <div id="tab-conflicts" class="hidden">
+      <div class="intel-card">
+        <h3>Document Conflicts</h3>
+        <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+          <select id="conflictSeverityFilter" class="btn btn-ghost btn-xs">
+            <option value="">All severities</option>
+            <option value="critical">Critical</option>
+            <option value="high">High</option>
+            <option value="medium">Medium</option>
+            <option value="low">Low</option>
+          </select>
+          <button class="btn btn-xs btn-primary" id="loadConflictsBtn">Load</button>
+        </div>
+        <div class="table-wrap">
+          <table class="intel-table">
+            <thead><tr><th>Type</th><th>Severity</th><th>Claim A</th><th>Claim B</th><th>Documents</th><th>Temporal</th><th>Action</th></tr></thead>
+            <tbody id="conflictsBody"><tr><td colspan="7" style="color:var(--muted)">Load conflicts above</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Expiry tab -->
+    <div id="tab-expiry" class="hidden">
+      <div class="intel-card">
+        <h3>Knowledge Expiration</h3>
+        <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+          <select id="expiryStatusFilter" class="btn btn-ghost btn-xs">
+            <option value="">All statuses</option>
+            <option value="expired">Expired</option>
+            <option value="superseded">Superseded</option>
+            <option value="pending_review">Pending Review</option>
+            <option value="active">Active</option>
+          </select>
+          <button class="btn btn-xs btn-primary" id="loadExpiryBtn">Load</button>
+        </div>
+        <div class="table-wrap">
+          <table class="intel-table">
+            <thead><tr><th>Document</th><th>Status</th><th>Expiry Date</th><th>Review Date</th><th>Source</th></tr></thead>
+            <tbody id="expiryBody"><tr><td colspan="5" style="color:var(--muted)">Load expiry above</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Ingestion Quality tab -->
+    <div id="tab-quality" class="hidden">
+      <div class="intel-card">
+        <h3>Ingestion Quality Reports</h3>
+        <button class="btn btn-xs btn-primary" id="loadQualityBtn" style="margin-bottom:12px">Load Reports</button>
+        <div class="table-wrap">
+          <table class="intel-table">
+            <thead><tr><th>Document</th><th>Score</th><th>Coverage</th><th>OCR</th><th>Empty Chunks</th><th>Quarantined</th><th>Action</th></tr></thead>
+            <tbody id="qualityBody"><tr><td colspan="7" style="color:var(--muted)">Load quality above</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Knowledge Gaps tab -->
+    <div id="tab-gaps" class="hidden">
+      <div class="intel-card">
+        <h3>Information Gaps</h3>
+        <div style="display:flex;gap:8px;margin-bottom:12px">
+          <button class="btn btn-xs btn-primary" id="loadGapsBtn">Load Gaps</button>
+          <button class="btn btn-xs" id="aggregateGapsBtn">Re-cluster</button>
+        </div>
+        <div id="gapsList"></div>
+      </div>
+    </div>
+
+    <!-- Trust Scores tab -->
+    <div id="tab-trust" class="hidden">
+      <div class="intel-card">
+        <h3>Document Trust Scores</h3>
+        <div style="display:flex;gap:8px;margin-bottom:12px">
+          <button class="btn btn-xs btn-primary" id="loadTrustBtn">Load Scores</button>
+          <button class="btn btn-xs" id="recomputeTrustBtn">Recompute All</button>
+        </div>
+        <div class="table-wrap">
+          <table class="intel-table">
+            <thead><tr><th>Document</th><th>Trust Score</th><th>Interpretation</th><th>Superseded</th><th>Pub Date</th></tr></thead>
+            <tbody id="trustBody"><tr><td colspan="5" style="color:var(--muted)">Load scores above</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Drift Detection tab -->
+    <div id="tab-drift" class="hidden">
+      <div class="admin-grid">
+        <div class="intel-card">
+          <h3>Add Baseline Question</h3>
+          <label style="font-size:0.85rem;display:block;margin-bottom:8px">
+            Question
+            <input type="text" id="baselineQuestion" placeholder="e.g. What is the attendance requirement?" style="display:block;width:100%;margin-top:4px;padding:8px;border:var(--border);border-radius:8px;background:var(--bg);color:var(--ink);font-family:var(--font)" />
+          </label>
+          <label style="font-size:0.85rem;display:block;margin-bottom:8px">
+            Expected keywords (comma-separated)
+            <input type="text" id="baselineKeywords" placeholder="75%, attendance" style="display:block;width:100%;margin-top:4px;padding:8px;border:var(--border);border-radius:8px;background:var(--bg);color:var(--ink);font-family:var(--font)" />
+          </label>
+          <button class="btn btn-xs btn-primary" id="addBaselineBtn">Add to Baseline</button>
+          <div id="baselineStatus" style="margin-top:8px;font-size:0.8rem;color:var(--ok)"></div>
+        </div>
+        <div class="intel-card">
+          <h3>Drift Run History</h3>
+          <button class="btn btn-xs btn-primary" id="loadDriftBtn" style="margin-bottom:10px">Load History</button>
+          <div id="driftHistory"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Provenance tab -->
+    <div id="tab-provenance" class="hidden">
+      <div class="intel-card">
+        <h3>Query Execution Logs</h3>
+        <button class="btn btn-xs btn-primary" id="loadProvenanceBtn" style="margin-bottom:12px">Load Logs</button>
+        <div class="table-wrap">
+          <table class="intel-table">
+            <thead><tr><th>Question</th><th>Strategy</th><th>Difficulty</th><th>Latency</th><th>Cached</th><th>Time</th><th>Trace</th></tr></thead>
+            <tbody id="provenanceBody"><tr><td colspan="7" style="color:var(--muted)">Load logs above</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Provenance Trace Modal ─────────────────────────────────────────── -->
+  <div id="provenanceModal" class="provenance-modal hidden">
+    <div class="provenance-card">
+      <button class="modal-close" id="closeProvenance">×</button>
+      <h2>🔍 Query Provenance Trace</h2>
+      <div id="provenanceContent"></div>
+    </div>
+  </div>
+
+  <!-- ── Auth modal ─────────────────────────────────────────────────────── -->
   <div id="authModal" class="modal hidden">
     <div class="modal-card">
       <h2 id="authTitle">Sign in</h2>
