@@ -425,7 +425,7 @@ def resolve_conflict(conflict_id: str, tenant_id: str) -> bool:
         text(
             """
             UPDATE document_conflicts
-            SET resolved = TRUE, reviewed_at = NOW()
+            SET resolved = TRUE, reviewed_at = CURRENT_TIMESTAMP
             WHERE id = :id AND tenant_id = :tenant
             """
         ),

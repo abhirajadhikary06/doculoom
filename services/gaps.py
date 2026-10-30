@@ -54,28 +54,17 @@ def record_if_unanswered(
 
     q_id = str(uuid.uuid4())
     try:
-        db.session.execute(
-            text(
-                """
-                INSERT INTO gap_questions (
-                    id, tenant_id, gap_id, question,
-                    user_id, log_id, embedding
-                ) VALUES (
-                    :id, :tenant, :gap, :question,
-                    :user, :log, :emb::jsonb
-                )
-                """
-            ),
-            {
-                "id": q_id,
-                "tenant": tenant_id,
-                "gap": gap_id,
-                "question": question[:500],
-                "user": user_id,
-                "log": log_id,
-                "emb": json.dumps(embedding) if embedding else "[]",
-            },
+        from models import GapQuestion
+        gq = GapQuestion(
+            id=q_id,
+            tenant_id=tenant_id,
+            gap_id=gap_id,
+            question=question[:500],
+            user_id=user_id,
+            log_id=log_id,
+            embedding=embedding or [],
         )
+        db.session.add(gq)
         db.session.commit()
 
         # Update gap record if we matched one
@@ -85,7 +74,7 @@ def record_if_unanswered(
                     """
                     UPDATE information_gaps
                     SET question_count = question_count + 1,
-                        last_seen_at = NOW()
+                        last_seen_at = CURRENT_TIMESTAMP
                     WHERE id = :gap_id
                     """
                 ),
@@ -204,26 +193,17 @@ def _create_gap(
     gap_id = str(uuid.uuid4())
     category = _classify_gap_category(question)
 
-    db.session.execute(
-        text(
-            """
-            INSERT INTO information_gaps (
-                id, tenant_id, cluster_label, question_count,
-                sample_questions, category
-            ) VALUES (
-                :id, :tenant, :label, 1,
-                :samples::jsonb, :cat
-            )
-            """
-        ),
-        {
-            "id": gap_id,
-            "tenant": tenant_id,
-            "label": question[:200],
-            "samples": json.dumps([question[:300]]),
-            "cat": category,
-        },
+    from models import InformationGap
+    ig = InformationGap(
+        id=gap_id,
+        tenant_id=tenant_id,
+        cluster_label=question[:200],
+        question_count=1,
+        sample_questions=[question[:300]],
+        category=category,
     )
+    db.session.add(ig)
+    db.session.commit()
 
     # Link the question to the new gap
     db.session.execute(
@@ -292,7 +272,7 @@ def aggregate_gaps(tenant_id: str) -> Dict[str, Any]:
             db.session.execute(
                 text(
                     "UPDATE information_gaps SET question_count = question_count + 1,"
-                    " last_seen_at = NOW() WHERE id = :g"
+                    " last_seen_at = CURRENT_TIMESTAMP WHERE id = :g"
                 ),
                 {"g": gap_id},
             )
@@ -316,12 +296,10 @@ def aggregate_gaps(tenant_id: str) -> Dict[str, Any]:
             {"g": gid},
         ).fetchall()
         samples = [r[0] for r in sample_rows]
-        db.session.execute(
-            text(
-                "UPDATE information_gaps SET sample_questions = :s::jsonb WHERE id = :g"
-            ),
-            {"s": json.dumps(samples), "g": gid},
-        )
+        from models import InformationGap
+        ig = InformationGap.query.get(gid)
+        if ig:
+            ig.sample_questions = samples
 
     db.session.commit()
     return {"tenant_id": tenant_id, "gaps_processed": len(gap_rows)}
@@ -436,7 +414,7 @@ def resolve_gap(gap_id: str, tenant_id: str) -> bool:
         text(
             """
             UPDATE information_gaps
-            SET resolved = TRUE, resolved_at = NOW()
+            SET resolved = TRUE, resolved_at = CURRENT_TIMESTAMP
             WHERE id = :id AND tenant_id = :tenant
             """
         ),

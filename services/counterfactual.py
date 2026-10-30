@@ -112,31 +112,19 @@ def create_test(
     Returns test_id.
     """
     test_id = str(uuid.uuid4())
-    db.session.execute(
-        text(
-            """
-            INSERT INTO counterfactual_tests (
-                id, tenant_id, name, base_document_id,
-                modification_type, modification_spec, test_questions,
-                status, created_by
-            ) VALUES (
-                :id, :tenant, :name, :doc,
-                :mtype, :mspec::jsonb, :tqs::jsonb,
-                'pending', :user
-            )
-            """
-        ),
-        {
-            "id": test_id,
-            "tenant": tenant_id,
-            "name": name,
-            "doc": base_document_id,
-            "mtype": modification_type,
-            "mspec": json.dumps(modification_spec),
-            "tqs": json.dumps(test_questions),
-            "user": created_by,
-        },
+    from models import CounterfactualTest
+    ct = CounterfactualTest(
+        id=test_id,
+        tenant_id=tenant_id,
+        name=name,
+        base_document_id=base_document_id,
+        modification_type=modification_type,
+        modification_spec=modification_spec,
+        test_questions=test_questions,
+        status="pending",
+        created_by=created_by,
     )
+    db.session.add(ct)
     db.session.commit()
     return test_id
 
@@ -251,22 +239,15 @@ def run_test(
             )
 
         # Save results
-        db.session.execute(
-            text(
-                """
-                UPDATE counterfactual_tests
-                SET status = 'completed', results = :results::jsonb,
-                    regression_detected = :reg, completed_at = NOW()
-                WHERE id = :id
-                """
-            ),
-            {
-                "id": test_id,
-                "results": json.dumps({"questions": results}),
-                "reg": regression_detected,
-            },
-        )
-        db.session.commit()
+        from datetime import datetime, timezone
+        from models import CounterfactualTest
+        ct = CounterfactualTest.query.get(test_id)
+        if ct:
+            ct.status = "completed"
+            ct.results = {"questions": results}
+            ct.regression_detected = regression_detected
+            ct.completed_at = datetime.now(timezone.utc)
+            db.session.commit()
 
         return {
             "test_id": test_id,
@@ -417,8 +398,8 @@ def list_tests(tenant_id: str, limit: int = 50) -> List[Dict[str, Any]]:
             "status": r[3],
             "regression_detected": r[4],
             "document": r[5],
-            "created_at": r[6].isoformat() if r[6] else None,
-            "completed_at": r[7].isoformat() if r[7] else None,
+            "created_at": r[6].isoformat() if hasattr(r[6], "isoformat") else (str(r[6]) if r[6] else None),
+            "completed_at": r[7].isoformat() if hasattr(r[7], "isoformat") else (str(r[7]) if r[7] else None),
         }
         for r in rows
     ]
@@ -448,7 +429,7 @@ def get_test_result(test_id: str, tenant_id: str) -> Optional[Dict[str, Any]]:
         "status": row[4],
         "results": row[5],
         "regression_detected": row[6],
-        "created_at": row[7].isoformat() if row[7] else None,
-        "completed_at": row[8].isoformat() if row[8] else None,
+        "created_at": row[7].isoformat() if hasattr(row[7], "isoformat") else (str(row[7]) if row[7] else None),
+        "completed_at": row[8].isoformat() if hasattr(row[8], "isoformat") else (str(row[8]) if row[8] else None),
         "document": row[9],
     }

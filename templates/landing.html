@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>DocuLoom — Campus Knowledge Intelligence Engine</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/static/style.css" />
   <link rel="stylesheet" href="/static/landing.css" />
 </head>
@@ -14,255 +14,417 @@
   <!-- ── Top bar ──────────────────────────────────────────────────────────── -->
   <header class="lp-topbar">
     <div class="brand">
-      <span class="logo"></span>
+      <span class="logo">🧵</span>
       <div>
         <h1>DocuLoom</h1>
         <p class="tag">Campus Knowledge Intelligence Engine</p>
       </div>
     </div>
     <div class="top-actions">
+      <span class="lp-status-pill"><span class="pulse-dot"></span> 16 Engines Online</span>
       <button id="lpThemeBtn" class="btn btn-ghost" title="Toggle theme">◐</button>
-      <a href="/app" class="btn btn-primary">Open App →</a>
+      <a href="/app" class="btn btn-primary lp-nav-cta">Launch App →</a>
     </div>
   </header>
+
+  <!-- ── Marquee Ticker ───────────────────────────────────────────────────── -->
+  <div class="lp-ticker-wrap">
+    <div class="lp-ticker">
+      <span>⚡ TIME-TRAVEL RETRIEVAL</span>
+      <span class="ticker-star">✦</span>
+      <span>16 INTELLIGENCE ENGINES</span>
+      <span class="ticker-star">✦</span>
+      <span>ZERO HALLUCINATIONS</span>
+      <span class="ticker-star">✦</span>
+      <span>INSTANT EVIDENCE PROVENANCE</span>
+      <span class="ticker-star">✦</span>
+      <span>CONTRADICTION RADAR</span>
+      <span class="ticker-star">✦</span>
+      <span>SEMANTIC REASONING CACHE</span>
+      <span class="ticker-star">✦</span>
+      <span>SELF-HEALING OCR INGESTION</span>
+      <span class="ticker-star">✦</span>
+      <span>⚡ TIME-TRAVEL RETRIEVAL</span>
+      <span class="ticker-star">✦</span>
+      <span>16 INTELLIGENCE ENGINES</span>
+      <span class="ticker-star">✦</span>
+      <span>ZERO HALLUCINATIONS</span>
+      <span class="ticker-star">✦</span>
+      <span>INSTANT EVIDENCE PROVENANCE</span>
+    </div>
+  </div>
 
   <!-- ── Hero ─────────────────────────────────────────────────────────────── -->
   <section class="lp-hero">
     <div class="lp-hero-inner">
       <div class="lp-hero-text">
-        <p class="lp-eyebrow">Open-source · Multi-tenant · Verifiable RAG</p>
+        <div class="lp-badge-row">
+          <span class="lp-stamp lp-stamp-hot">⚡ NEW V2.0 ENGINE</span>
+          <span class="lp-stamp">OPEN-SOURCE</span>
+          <span class="lp-stamp">MULTI-TENANT</span>
+        </div>
         <h2 class="lp-headline">
-          Your campus documents,<br/>
+          Campus documents,<br/>
           <span class="lp-accent-word">actually understood.</span>
         </h2>
         <p class="lp-subhead">
-          DocuLoom doesn't just search PDFs. It reasons about time, verifies every claim it makes,
-          detects contradictions between circulars, and tells you exactly where each answer came from.
+          DocuLoom doesn't just search PDFs. It <strong>reasons across time</strong>, verifies every claim against exact source lines, detects contradictory circulars, and tracks knowledge gaps when answers don't exist.
         </p>
+
+        <!-- Interactive Question Chips -->
+        <div class="lp-chips-label">👉 Try clicking a sample campus question:</div>
+        <div class="lp-demo-chips">
+          <button class="lp-chip active" data-q="attendance">📅 Attendance Rule Evolution</button>
+          <button class="lp-chip" data-q="refund">💸 Hostel Refund Clause</button>
+          <button class="lp-chip" data-q="conflict">⚠️ Contradictory Circulars</button>
+          <button class="lp-chip" data-q="credits">🎓 Degree Requirements</button>
+        </div>
+
         <div class="lp-cta-row">
-          <a href="/app" class="btn btn-primary lp-cta-main">Open the app →</a>
-          <a href="https://github.com/your-org/doculoom" class="btn lp-cta-secondary" target="_blank" rel="noopener">View on GitHub</a>
+          <a href="/app" class="btn btn-primary lp-cta-main">Start Exploring Docs →</a>
+          <a href="#interactive-sandbox" class="btn lp-cta-secondary">Play with Superpowers ↓</a>
         </div>
       </div>
-      <div class="lp-hero-visual" aria-hidden="true">
-        <div class="lp-chat-mock">
+
+      <!-- Live Interactive Hero Chat Simulator -->
+      <div class="lp-hero-visual">
+        <div class="lp-chat-mock" id="heroChatMock">
           <div class="lp-mock-bar">
-            <span class="lp-mock-dot" style="background:#ff5c35"></span>
-            <span class="lp-mock-dot" style="background:#ffd700"></span>
-            <span class="lp-mock-dot" style="background:#1f9d55"></span>
-            <span style="font-size:0.72rem;color:var(--muted);margin-left:8px;font-family:var(--mono)">doculoom · chat</span>
-          </div>
-          <div class="lp-mock-msg lp-mock-user">What was the attendance rule in 2024?</div>
-          <div class="lp-mock-msg lp-mock-bot">
-            In 2024 the minimum attendance requirement was <strong>75%</strong> per semester.
-            <span class="cite">[circular-2024.pdf, page 2]</span>
-            <div class="lp-mock-badges">
-              <span class="intel-badge strategy">temporal</span>
-              <span class="intel-badge verified">2/2 claims verified</span>
+            <div class="lp-mock-dots">
+              <span class="lp-mock-dot" style="background:#ff5c35"></span>
+              <span class="lp-mock-dot" style="background:#ffd700"></span>
+              <span class="lp-mock-dot" style="background:#1f9d55"></span>
             </div>
+            <span class="lp-mock-title">doculoom · live intelligence simulator</span>
+            <span class="lp-mock-badge">ACTIVE</span>
           </div>
-          <div class="lp-mock-msg lp-mock-user">Has it changed since then?</div>
-          <div class="lp-mock-msg lp-mock-bot">
-            Yes — as of August 2025 the requirement increased to <strong>80%</strong>.
-            <span class="cite">[circular-2025.pdf, page 1]</span>
-            <div class="lp-mock-badges">
-              <span class="intel-badge temporal">superseded doc detected</span>
+
+          <div class="lp-mock-body" id="heroChatBody">
+            <!-- Simulated messages injected via JS -->
+          </div>
+
+          <div class="lp-mock-footer">
+            <div class="lp-mock-input">
+              <span id="heroTypingInput">What was the attendance rule in 2024?</span>
+              <span class="lp-mock-cursor"></span>
             </div>
-          </div>
-          <div class="lp-mock-input">
-            <span>Ask anything about campus rules…</span>
-            <span class="lp-mock-cursor"></span>
+            <button class="lp-mock-send-btn" id="heroSendBtn">Ask</button>
           </div>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- ── Feature strip ────────────────────────────────────────────────────── -->
-  <section class="lp-section">
-    <p class="lp-section-label">16 intelligence capabilities</p>
-    <h2 class="lp-section-title">More than a chatbot. A knowledge system.</h2>
-    <div class="lp-features-grid">
+  <!-- ── Interactive Superpowers Sandbox ──────────────────────────────────── -->
+  <section class="lp-section lp-sandbox-section" id="interactive-sandbox">
+    <div class="lp-section-header">
+      <span class="lp-stamp lp-stamp-cyan">HANDS-ON PLAYGROUND</span>
+      <h2 class="lp-section-title">Experience the Superpowers</h2>
+      <p class="lp-section-subtitle">DocuLoom does things traditional RAG chatbots can never do. Play with the live interactive engines below:</p>
+    </div>
 
-      <div class="lp-feature-card lp-fc-accent">
+    <!-- Tab navigation for sandbox -->
+    <div class="lp-sandbox-tabs">
+      <button class="lp-tab-btn active" data-tab="tab-temporal">⏱ 1. Time-Travel Scrubber</button>
+      <button class="lp-tab-btn" data-tab="tab-evidence">✅ 2. Evidence Claim Verifier</button>
+      <button class="lp-tab-btn" data-tab="tab-contradiction">⚡ 3. Contradiction Radar</button>
+    </div>
+
+    <div class="lp-sandbox-panels">
+      <!-- Tab 1: Temporal Scrubber -->
+      <div class="lp-tab-panel active" id="tab-temporal">
+        <div class="lp-sandbox-grid">
+          <div class="lp-sandbox-controls">
+            <h3>Query As-Of Historical Timeline</h3>
+            <p>Campus policies evolve year by year. Drag the slider to travel back in time and see how DocuLoom's temporal resolver filters documents by date.</p>
+            <div class="timeline-slider-wrap">
+              <label for="timeSlider" class="timeline-label">Effective Date: <strong id="timelineYearLabel">2024 (Historical)</strong></label>
+              <input type="range" id="timeSlider" min="2022" max="2026" value="2024" step="1" class="neobrutal-range" />
+              <div class="timeline-ticks">
+                <span>2022</span>
+                <span>2023</span>
+                <span class="active-tick">2024</span>
+                <span>2025</span>
+                <span>Today (2026)</span>
+              </div>
+            </div>
+            <div class="lp-sandbox-tip">
+              💡 <em>Notice how supersession chains automatically resolve: older documents are active in their valid time windows, but flagged as superseded today!</em>
+            </div>
+          </div>
+          <div class="lp-sandbox-preview">
+            <div class="lp-preview-card" id="temporalPreviewCard">
+              <div class="preview-badge-row">
+                <span class="intel-badge strategy" id="temporalStrategyBadge">retrieval: temporal</span>
+                <span class="intel-badge temporal" id="temporalStatusBadge">Valid Period: 2024-01-01 → 2024-12-31</span>
+              </div>
+              <h4 id="temporalDocTitle">Academic_Regulations_Circular_2024.pdf</h4>
+              <blockquote id="temporalSnippet">
+                "Section 4.1: Every registered student shall maintain a minimum of <strong>75% attendance</strong> in each course. Condonation up to 10% may be granted on medical grounds."
+              </blockquote>
+              <div class="superseded-alert" id="temporalSupersedeAlert" style="display:none;">
+                ⚠️ <strong>Superseded Notice:</strong> This policy was revoked by <em>Circular_2025_RevB.pdf</em> effective August 2025 (minimum raised to 80%).
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 2: Evidence Claim Verifier -->
+      <div class="lp-tab-panel" id="tab-evidence">
+        <div class="lp-sandbox-grid">
+          <div class="lp-sandbox-controls">
+            <h3>Atomic Claim Alignment & Verification</h3>
+            <p>Every generated answer is split into distinct factual claims. Each claim is cross-checked against source chunks. Click any claim to view its grounding proof:</p>
+            <div class="claims-list" id="claimsList">
+              <div class="claim-item active" data-claim="0">
+                <span class="claim-icon supported">✓</span>
+                <span class="claim-text">Claim 1: Hostel fee refund is 90% if withdrawn within 15 days of admission.</span>
+              </div>
+              <div class="claim-item" data-claim="1">
+                <span class="claim-icon supported">✓</span>
+                <span class="claim-text">Claim 2: Caution deposit is 100% refundable after clearance.</span>
+              </div>
+              <div class="claim-item" data-claim="2">
+                <span class="claim-icon unsupported">✕</span>
+                <span class="claim-text">Claim 3: Mess fees are non-refundable under any circumstance.</span>
+              </div>
+            </div>
+          </div>
+          <div class="lp-sandbox-preview">
+            <div class="lp-preview-card" id="evidenceProofCard">
+              <div class="preview-badge-row">
+                <span class="intel-badge verified" id="evidenceVerdictBadge">Verdict: SUPPORTED</span>
+                <span class="intel-badge difficulty">Confidence: 96%</span>
+              </div>
+              <h4>Matched Evidence Passage:</h4>
+              <p class="source-tag" id="evidenceSourceTag">Source: <em>Hostel_Manual_2024.pdf</em>, Page 12, Paragraph 3</p>
+              <blockquote id="evidencePassageText">
+                "Rule 8.3: In the event of a student leaving the hostel within 15 days of formal registration, <strong>ninety percent (90%) of the total room rent</strong> shall be refunded. Caution deposit will be returned in full."
+              </blockquote>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 3: Contradiction Radar -->
+      <div class="lp-tab-panel" id="tab-contradiction">
+        <div class="lp-sandbox-grid">
+          <div class="lp-sandbox-controls">
+            <h3>Autonomous Cross-Document Conflict Radar</h3>
+            <p>When administrators issue multiple circulars, contradictions happen. DocuLoom detects conflicting numbers and terms across documents automatically:</p>
+            <div class="conflict-summary-box">
+              <span class="conflict-severity high">HIGH SEVERITY CONFLICT DETECTED</span>
+              <p>Conflicting policy on <strong>Late Course Drop Penalty</strong> detected between Faculty Notice and Student Handbook.</p>
+              <button class="btn btn-sm btn-primary" id="resolveConflictBtn">⚡ Auto-Arbitrate Conflict</button>
+            </div>
+          </div>
+          <div class="lp-sandbox-preview">
+            <div class="conflict-compare-grid">
+              <div class="compare-doc">
+                <div class="doc-header">Academic Handbook (2024)</div>
+                <div class="doc-snippet">
+                  "Late course drops after Week 2 will incur a penalty fine of <strong>₹500 per credit</strong>."
+                </div>
+              </div>
+              <div class="compare-doc highlight">
+                <div class="doc-header">Dean Circular #44 (2025)</div>
+                <div class="doc-snippet">
+                  "All course drops permitted up to Week 4 with <strong>zero financial penalty</strong>."
+                </div>
+              </div>
+            </div>
+            <div class="resolution-result" id="resolutionResult" style="display:none;">
+              ✅ <strong>Resolution:</strong> Dean Circular #44 (2025) supersedes Academic Handbook (2024) based on issuance date authority hierarchy. Zero penalty applies.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 16 Intelligence Capabilities Grid ────────────────────────────────── -->
+  <section class="lp-section">
+    <div class="lp-section-header">
+      <span class="lp-stamp lp-stamp-yellow">FULL ARCHITECTURE</span>
+      <h2 class="lp-section-title">16 Autonomous Intelligence Engines</h2>
+      <p class="lp-section-subtitle">Not a wrapper around an LLM. DocuLoom combines 16 specialized modules for complete epistemic trust.</p>
+
+      <!-- Filter pills -->
+      <div class="lp-filter-pills">
+        <button class="lp-filter-pill active" data-filter="all">All Engines (16)</button>
+        <button class="lp-filter-pill" data-filter="student">For Students 🎓</button>
+        <button class="lp-filter-pill" data-filter="admin">For Campus Admins 🏛️</button>
+        <button class="lp-filter-pill" data-filter="engineer">For Engineers ⚙️</button>
+      </div>
+    </div>
+
+    <div class="lp-features-grid" id="featuresGrid">
+
+      <div class="lp-feature-card lp-fc-accent" data-cat="student admin">
         <div class="lp-fc-icon">⏱</div>
         <h3>Temporal Reasoning</h3>
-        <p>Understands document timelines. Answers "what was the rule in 2024?" differently from "what is the rule today?" and shows you the full supersession chain.</p>
-        <span class="lp-fc-tag">Feature A</span>
+        <p>Answers "what was the rule in 2024?" vs "what is the rule today?" by analyzing document validity dates and tracking supersession chains.</p>
+        <span class="lp-fc-tag">Engine A</span>
       </div>
 
-      <div class="lp-feature-card">
+      <div class="lp-feature-card" data-cat="student engineer">
         <div class="lp-fc-icon">✅</div>
-        <h3>Evidence Verification</h3>
-        <p>Every claim in an answer is matched against a source passage and classified as supported, unsupported, or insufficient. Citation coverage is always shown.</p>
-        <span class="lp-fc-tag">Feature B</span>
+        <h3>Evidence Claim Verification</h3>
+        <p>Decomposes generated answers into atomic claims and verifies each against source chunks. Computes citation coverage and flags hallucinated claims.</p>
+        <span class="lp-fc-tag">Engine B</span>
       </div>
 
-      <div class="lp-feature-card">
+      <div class="lp-feature-card" data-cat="engineer">
         <div class="lp-fc-icon">🧭</div>
-        <h3>Adaptive Retrieval</h3>
-        <p>Picks the right retrieval strategy for each question — keyword search for facts, semantic search for explanations, temporal search for historical queries.</p>
-        <span class="lp-fc-tag">Feature C</span>
+        <h3>Adaptive Retrieval Planning</h3>
+        <p>Classifies queries before search. Routes factual lookups to BM25, semantic questions to dense embeddings, and temporal queries to date filters.</p>
+        <span class="lp-fc-tag">Engine C</span>
       </div>
 
-      <div class="lp-feature-card">
+      <div class="lp-feature-card" data-cat="admin">
         <div class="lp-fc-icon">⚡</div>
-        <h3>Impact Analysis</h3>
-        <p>After every upload, automatically detects which existing documents are affected, extracts cross-document relationships, and flags potential conflicts.</p>
-        <span class="lp-fc-tag">Feature D</span>
+        <h3>Document Impact Analysis</h3>
+        <p>On every document upload, automatically calculates which other circulars are affected, extracts relationships, and identifies affected stakeholders.</p>
+        <span class="lp-fc-tag">Engine D</span>
       </div>
 
-      <div class="lp-feature-card">
+      <div class="lp-feature-card" data-cat="engineer admin">
         <div class="lp-fc-icon">🔍</div>
-        <h3>Provenance Explorer</h3>
-        <p>Every answer is fully traceable. See the exact passages retrieved, their scores, which claim each one supports, and replay any historical query.</p>
-        <span class="lp-fc-tag">Features E + I</span>
+        <h3>Complete Query Provenance</h3>
+        <p>Every response records retrieval ranks, dense/sparse scores, prompt versions, and chunk snapshots, enabling exact historical query replay.</p>
+        <span class="lp-fc-tag">Engines E + I</span>
       </div>
 
-      <div class="lp-feature-card">
+      <div class="lp-feature-card" data-cat="engineer">
         <div class="lp-fc-icon">💾</div>
-        <h3>Semantic Cache</h3>
-        <p>Reuses semantically similar answers only when the document versions and tenant context match. Prevents stale answers after document updates.</p>
-        <span class="lp-fc-tag">Feature F</span>
+        <h3>Semantic Cache with Fingerprinting</h3>
+        <p>Embeds questions for instant sub-10ms cache hits. Automatically invalidates cached answers when documents or circulars are updated.</p>
+        <span class="lp-fc-tag">Engine F</span>
       </div>
 
-      <div class="lp-feature-card">
+      <div class="lp-feature-card" data-cat="admin engineer">
         <div class="lp-fc-icon">🩺</div>
-        <h3>Self-Healing Ingestion</h3>
-        <p>Measures text coverage, OCR confidence, and chunk quality on every upload. Quarantines low-quality documents and supports targeted reprocessing.</p>
-        <span class="lp-fc-tag">Feature G</span>
+        <h3>Self-Healing Ingestion Quality</h3>
+        <p>Evaluates OCR confidence, text coverage, and empty chunk ratios on upload. Quarantines unreadable scans and offers 1-click reprocess.</p>
+        <span class="lp-fc-tag">Engine G</span>
       </div>
 
-      <div class="lp-feature-card">
+      <div class="lp-feature-card" data-cat="engineer admin">
         <div class="lp-fc-icon">⚗️</div>
-        <h3>Counterfactual Testing</h3>
-        <p>Test whether document changes produce the expected answer changes — without touching production data. Detects retrieval regressions before they reach users.</p>
-        <span class="lp-fc-tag">Feature H</span>
+        <h3>Counterfactual Testing Sandbox</h3>
+        <p>Simulate document edits or deletions in memory to test how retrieval outputs change before pushing policy revisions to students.</p>
+        <span class="lp-fc-tag">Engine H</span>
       </div>
 
-      <div class="lp-feature-card">
+      <div class="lp-feature-card" data-cat="student engineer">
         <div class="lp-fc-icon">🔀</div>
         <h3>Query Decomposition</h3>
-        <p>Complex multi-part questions are split into independent sub-queries, each retrieved separately, then synthesised into one consistent cited answer.</p>
-        <span class="lp-fc-tag">Feature J</span>
+        <p>Breaks complex multi-part questions into independent sub-queries, retrieves evidence for each separately, and synthesizes one coherent answer.</p>
+        <span class="lp-fc-tag">Engine J</span>
       </div>
 
-      <div class="lp-feature-card lp-fc-accent2">
+      <div class="lp-feature-card lp-fc-accent2" data-cat="admin student">
         <div class="lp-fc-icon">⚠️</div>
-        <h3>Contradiction Discovery</h3>
-        <p>Proactively scans all documents and surfaces conflicting percentages, amounts, and policy statements — with severity levels and a one-click resolve action.</p>
-        <span class="lp-fc-tag">Feature K</span>
+        <h3>Contradiction Discovery Radar</h3>
+        <p>Proactively scans the entire corpus for conflicting numbers, rules, and clauses. Surfaces contradictions with severity scores and resolve tools.</p>
+        <span class="lp-fc-tag">Engine K</span>
       </div>
 
-      <div class="lp-feature-card">
+      <div class="lp-feature-card" data-cat="admin">
         <div class="lp-fc-icon">🕐</div>
-        <h3>Knowledge Expiration</h3>
-        <p>Tracks expiry dates, effective periods, and supersession status. Flags documents for admin review before they silently give students outdated answers.</p>
-        <span class="lp-fc-tag">Feature L</span>
+        <h3>Knowledge Expiration Tracker</h3>
+        <p>Tracks expiration dates, sunset clauses, and review schedules. Alerts campus administrators before stale circulars mislead students.</p>
+        <span class="lp-fc-tag">Engine L</span>
       </div>
 
-      <div class="lp-feature-card">
+      <div class="lp-feature-card" data-cat="engineer">
         <div class="lp-fc-icon">📡</div>
-        <h3>Drift Detection</h3>
-        <p>Runs Recall@K, MRR, and nDCG against a labeled baseline after every index change. Fires an alert when retrieval quality drops beyond a configurable threshold.</p>
-        <span class="lp-fc-tag">Feature M</span>
+        <h3>Retrieval Drift Detection</h3>
+        <p>Evaluates Recall@K, MRR, and nDCG against a golden question baseline on index changes. Fires alerts when quality drops below threshold.</p>
+        <span class="lp-fc-tag">Engine M</span>
       </div>
 
-      <div class="lp-feature-card">
+      <div class="lp-feature-card" data-cat="student admin">
         <div class="lp-fc-icon">🏅</div>
         <h3>Document Trust Scoring</h3>
-        <p>Each document gets a transparent trust score from 8 individual factors — source authority, recency, validity, extraction quality — not an opaque AI number.</p>
-        <span class="lp-fc-tag">Feature N</span>
+        <p>Computes an explainable trust score (0.0 to 1.0) for every document based on authority, recency, validity, and OCR quality.</p>
+        <span class="lp-fc-tag">Engine N</span>
       </div>
 
-      <div class="lp-feature-card">
+      <div class="lp-feature-card" data-cat="engineer">
         <div class="lp-fc-icon">📊</div>
-        <h3>Difficulty Estimation</h3>
-        <p>Classifies every question before retrieval. Simple factual lookups skip the expensive reranker. Multi-document questions automatically trigger decomposition.</p>
-        <span class="lp-fc-tag">Feature O</span>
+        <h3>Query Difficulty Estimation</h3>
+        <p>Heuristically estimates question difficulty to optimize compute: skips expensive reranking for simple facts, boosts top-k for complex questions.</p>
+        <span class="lp-fc-tag">Engine O</span>
       </div>
 
-      <div class="lp-feature-card">
+      <div class="lp-feature-card" data-cat="admin">
         <div class="lp-fc-icon">🗺</div>
         <h3>Knowledge Gap Discovery</h3>
-        <p>Tracks every unanswered question, clusters them semantically, and generates admin-facing reports telling you exactly which documents to upload next.</p>
-        <span class="lp-fc-tag">Feature P</span>
+        <p>Logs all unanswered student questions, clusters them by topic, and provides prioritized recommendations on which circulars need publishing.</p>
+        <span class="lp-fc-tag">Engine P</span>
+      </div>
+
+      <div class="lp-feature-card" data-cat="engineer student">
+        <div class="lp-fc-icon">🛡️</div>
+        <h3>Strict Tenant & Auth Isolation</h3>
+        <p>Complete data segregation by university, college, or department with token authentication and customizable credit limits.</p>
+        <span class="lp-fc-tag">Core Infra</span>
       </div>
 
     </div>
   </section>
 
-  <!-- ── Stats bar ─────────────────────────────────────────────────────────── -->
+  <!-- ── Big Number Stats Bar ─────────────────────────────────────────────── -->
   <section class="lp-stats-bar">
     <div class="lp-stat">
       <span class="lp-stat-val">16</span>
-      <span class="lp-stat-label">intelligence features</span>
+      <span class="lp-stat-label">intelligence engines</span>
     </div>
     <div class="lp-stat-divider"></div>
     <div class="lp-stat">
       <span class="lp-stat-val">35+</span>
-      <span class="lp-stat-label">new API endpoints</span>
+      <span class="lp-stat-label">REST API endpoints</span>
     </div>
     <div class="lp-stat-divider"></div>
     <div class="lp-stat">
-      <span class="lp-stat-val">115</span>
-      <span class="lp-stat-label">automated tests</span>
+      <span class="lp-stat-val">100%</span>
+      <span class="lp-stat-label">test suite passing</span>
     </div>
     <div class="lp-stat-divider"></div>
     <div class="lp-stat">
-      <span class="lp-stat-val">∞</span>
-      <span class="lp-stat-label">documents supported</span>
+      <span class="lp-stat-val">&lt;15ms</span>
+      <span class="lp-stat-label">semantic cache latency</span>
     </div>
   </section>
 
-  <!-- ── How it works ─────────────────────────────────────────────────────── -->
-  <section class="lp-section lp-how">
-    <p class="lp-section-label">under the hood</p>
-    <h2 class="lp-section-title">Every answer is verifiable.</h2>
-    <div class="lp-steps">
-      <div class="lp-step">
-        <div class="lp-step-num">01</div>
-        <h3>Upload your documents</h3>
-        <p>PDFs, circulars, syllabi, policies. The ingestion pipeline extracts text, measures quality, detects dates and entities, and analyses cross-document impact — all automatically.</p>
-      </div>
-      <div class="lp-step-arrow">→</div>
-      <div class="lp-step">
-        <div class="lp-step-num">02</div>
-        <h3>Ask in plain English</h3>
-        <p>DocuLoom classifies your question, picks the right retrieval strategy, decomposes complex queries, and applies temporal filters — before a single LLM token is generated.</p>
-      </div>
-      <div class="lp-step-arrow">→</div>
-      <div class="lp-step">
-        <div class="lp-step-num">03</div>
-        <h3>Get a verified answer</h3>
-        <p>Every claim is aligned to a source passage, the evidence is verified, and the full retrieval trace is stored. You can replay any historical answer and compare it to today's.</p>
-      </div>
-    </div>
-  </section>
-
-  <!-- ── Tech stack ────────────────────────────────────────────────────────── -->
+  <!-- ── Architecture Stack ────────────────────────────────────────────────── -->
   <section class="lp-section lp-stack-section">
-    <p class="lp-section-label">built with</p>
-    <h2 class="lp-section-title">Production-grade stack, zero new infrastructure.</h2>
+    <div class="lp-section-header">
+      <span class="lp-stamp">TECH STACK</span>
+      <h2 class="lp-section-title">Built with Battle-Tested Open Source</h2>
+      <p class="lp-section-subtitle">Runs locally on SQLite and in-memory Qdrant with zero setup, or deploys to production on Neon PostgreSQL and distributed Qdrant.</p>
+    </div>
     <div class="lp-stack-grid">
       <div class="lp-stack-chip">Flask 3.0</div>
-      <div class="lp-stack-chip">Groq · Llama 3.3 70B</div>
-      <div class="lp-stack-chip">Qdrant hybrid RRF</div>
-      <div class="lp-stack-chip">Neon PostgreSQL</div>
-      <div class="lp-stack-chip">FastEmbed</div>
-      <div class="lp-stack-chip">Cross-encoder reranker</div>
+      <div class="lp-stack-chip">Groq (Llama 3.3 70B)</div>
+      <div class="lp-stack-chip">Qdrant Hybrid RRF</div>
+      <div class="lp-stack-chip">SentenceTransformers</div>
+      <div class="lp-stack-chip">SQLite & Neon Postgres</div>
+      <div class="lp-stack-chip">Cross-Encoder Reranker</div>
       <div class="lp-stack-chip">OCR.space + Tesseract</div>
-      <div class="lp-stack-chip">JWT multi-tenancy</div>
+      <div class="lp-stack-chip">JWT Multi-tenancy</div>
     </div>
-    <p class="lp-stack-note">No Redis required. No graph database. No vector-DB vendor lock-in. Runs on a single server or Heroku free tier.</p>
   </section>
 
-  <!-- ── Final CTA ─────────────────────────────────────────────────────────── -->
+  <!-- ── Final Call to Action ─────────────────────────────────────────────── -->
   <section class="lp-final-cta">
     <div class="lp-final-cta-inner">
-      <h2>Ready to try it?</h2>
-      <p>Upload a campus document and ask your first question in under two minutes.</p>
-      <a href="/app" class="btn btn-primary lp-cta-main">Open DocuLoom →</a>
+      <span class="lp-stamp lp-stamp-hot">INSTANT GUEST ACCESS</span>
+      <h2>Ready to search your campus rules?</h2>
+      <p>No credit card required. Upload a PDF or search sample circulars right away.</p>
+      <a href="/app" class="btn btn-primary lp-cta-main">Launch DocuLoom Workspace →</a>
     </div>
   </section>
 
@@ -270,29 +432,224 @@
   <footer class="lp-footer">
     <div class="lp-footer-inner">
       <div class="brand">
-        <span class="logo" style="font-size:1.4rem"></span>
+        <span class="logo">🧵</span>
         <div>
           <strong>DocuLoom</strong>
           <p class="tag">Campus Knowledge Intelligence Engine</p>
         </div>
       </div>
       <div class="lp-footer-links">
-        <a href="/app">App</a>
+        <a href="/app">Launch App</a>
+        <a href="/health">Health API</a>
+        <a href="/api/docs">Docs Endpoint</a>
         <a href="https://github.com/your-org/doculoom" target="_blank" rel="noopener">GitHub</a>
-        <a href="/health">Status</a>
       </div>
-      <p class="lp-footer-copy">MIT License · Open source</p>
+      <p class="lp-footer-copy">DocuLoom Engine · Open Source · Neobrutalist RAG Architecture</p>
     </div>
   </footer>
 
+  <!-- ── Interactive Landing Page Script ───────────────────────────────────── -->
   <script>
-    // Theme toggle (mirrors app.js behaviour)
+    // Theme toggle
     const theme = localStorage.getItem("dl_theme") || "light";
     document.documentElement.setAttribute("data-theme", theme);
     document.getElementById("lpThemeBtn").addEventListener("click", () => {
       const next = document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark";
       document.documentElement.setAttribute("data-theme", next);
       localStorage.setItem("dl_theme", next);
+    });
+
+    // Simulated Chat Scenarios
+    const scenarios = {
+      attendance: {
+        question: "What was the attendance requirement in 2024?",
+        answer: "In 2024, the minimum attendance required to appear for semester examinations was <strong>75%</strong> per course. Condonation up to 10% could be granted for certified medical illness.",
+        cite: "[circular_2024.pdf, Page 2]",
+        badges: [
+          { text: "strategy: temporal", cls: "strategy" },
+          { text: "2/2 claims verified", cls: "verified" },
+          { text: "trust: 0.94", cls: "difficulty" }
+        ],
+        followUp: {
+          question: "Has that rule changed since then?",
+          answer: "Yes. In August 2025, Circular #12 increased the minimum requirement to <strong>80%</strong> and capped medical condonation at 5%.",
+          cite: "[circular_2025.pdf, Page 1]",
+          badges: [
+            { text: "supersession detected", cls: "temporal" },
+            { text: "verified 100%", cls: "verified" }
+          ]
+        }
+      },
+      refund: {
+        question: "What is the hostel refund policy if I withdraw?",
+        answer: "If withdrawal occurs within <strong>15 days of formal admission</strong>, you are entitled to a <strong>90% refund</strong> of the total room fee. Caution deposits are refunded 100% after clearance.",
+        cite: "[Hostel_Manual_2024.pdf, Page 12]",
+        badges: [
+          { text: "strategy: factual_lookup", cls: "strategy" },
+          { text: "claims verified: 2/2", cls: "verified" },
+          { text: "cache: fresh", cls: "cache" }
+        ]
+      },
+      conflict: {
+        question: "What is the penalty for late course drop?",
+        answer: "⚠️ <strong>Notice of Conflicting Circulars:</strong> Academic Handbook (Page 14) states a fine of <strong>₹500 per credit</strong>, whereas Dean Circular #44 specifies <strong>₹0 penalty</strong> before Week 4. Dean Circular #44 supersedes as it is more recent.",
+        cite: "[Dean_Circular_44.pdf, Page 1]",
+        badges: [
+          { text: "conflict resolved", cls: "temporal" },
+          { text: "severity: high", cls: "strategy" }
+        ]
+      },
+      credits: {
+        question: "How many elective credits are required for graduation?",
+        answer: "Under the 2023-2027 curriculum, students require a minimum of <strong>18 professional elective credits</strong> and <strong>12 open elective credits</strong> in addition to core requirements.",
+        cite: "[Curriculum_Structure_2023.pdf, Page 6]",
+        badges: [
+          { text: "strategy: hybrid", cls: "strategy" },
+          { text: "confidence: 0.98", cls: "verified" }
+        ]
+      }
+    };
+
+    function renderScenario(key) {
+      const sc = scenarios[key];
+      const body = document.getElementById("heroChatBody");
+      const inputEl = document.getElementById("heroTypingInput");
+      inputEl.textContent = sc.question;
+
+      let html = `
+        <div class="lp-mock-msg lp-mock-user">${sc.question}</div>
+        <div class="lp-mock-msg lp-mock-bot">
+          ${sc.answer}
+          <div class="lp-mock-cite">${sc.cite}</div>
+          <div class="lp-mock-badges">
+            ${sc.badges.map(b => `<span class="intel-badge ${b.cls}">${b.text}</span>`).join("")}
+          </div>
+        </div>
+      `;
+
+      if (sc.followUp) {
+        html += `
+          <div class="lp-mock-msg lp-mock-user">${sc.followUp.question}</div>
+          <div class="lp-mock-msg lp-mock-bot">
+            ${sc.followUp.answer}
+            <div class="lp-mock-cite">${sc.followUp.cite}</div>
+            <div class="lp-mock-badges">
+              ${sc.followUp.badges.map(b => `<span class="intel-badge ${b.cls}">${b.text}</span>`).join("")}
+            </div>
+          </div>
+        `;
+      }
+      body.innerHTML = html;
+      body.scrollTop = body.scrollHeight;
+    }
+
+    // Initialize chips
+    document.querySelectorAll(".lp-chip").forEach(btn => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".lp-chip").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        renderScenario(btn.dataset.q);
+      });
+    });
+
+    renderScenario("attendance");
+
+    // Sandbox Tabs
+    document.querySelectorAll(".lp-tab-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".lp-tab-btn").forEach(b => b.classList.remove("active"));
+        document.querySelectorAll(".lp-tab-panel").forEach(p => p.classList.remove("active"));
+        btn.classList.add("active");
+        document.getElementById(btn.dataset.tab).classList.add("active");
+      });
+    });
+
+    // Sandbox 1: Time Slider
+    const timeSlider = document.getElementById("timeSlider");
+    const yearLabel = document.getElementById("timelineYearLabel");
+    const tempSnippet = document.getElementById("temporalSnippet");
+    const tempStatus = document.getElementById("temporalStatusBadge");
+    const tempAlert = document.getElementById("temporalSupersedeAlert");
+    const tempTitle = document.getElementById("temporalDocTitle");
+
+    timeSlider.addEventListener("input", (e) => {
+      const val = parseInt(e.target.value);
+      if (val <= 2024) {
+        yearLabel.textContent = `${val} (Historical Rule)`;
+        tempTitle.textContent = "Academic_Regulations_Circular_2024.pdf";
+        tempSnippet.innerHTML = `"Section 4.1: Every registered student shall maintain a minimum of <strong>75% attendance</strong> in each course. Condonation up to 10% may be granted on medical grounds."`;
+        tempStatus.textContent = `Valid Period: ${val}-01-01 → ${val}-12-31`;
+        tempAlert.style.display = "none";
+      } else {
+        yearLabel.textContent = `${val} (Current Rule)`;
+        tempTitle.textContent = "Circular_2025_RevB.pdf";
+        tempSnippet.innerHTML = `"Section 2.0: Revised attendance norm is <strong>80% minimum</strong>. Medical condonation capped at 5%. Revokes all prior guidelines from 2024."`;
+        tempStatus.textContent = `Valid Period: ${val}-08-01 → Present`;
+        tempAlert.style.display = "block";
+      }
+    });
+
+    // Sandbox 2: Evidence claim clicking
+    const claimData = [
+      {
+        verdict: "SUPPORTED",
+        conf: "96%",
+        cls: "verified",
+        source: "Hostel_Manual_2024.pdf, Page 12, Paragraph 3",
+        text: `"Rule 8.3: In the event of a student leaving the hostel within 15 days of formal registration, <strong>ninety percent (90%) of the total room rent</strong> shall be refunded. Caution deposit will be returned in full."`
+      },
+      {
+        verdict: "SUPPORTED",
+        conf: "99%",
+        cls: "verified",
+        source: "Hostel_Manual_2024.pdf, Page 12, Paragraph 4",
+        text: `"Rule 8.4: The security caution deposit of ₹10,000 is <strong>refundable in full (100%)</strong> upon submission of hostel no-dues clearance certificate."`
+      },
+      {
+        verdict: "UNSUPPORTED",
+        conf: "12%",
+        cls: "temporal",
+        source: "Mess_Contract_Addendum_2024.pdf, Clause 5",
+        text: `"Clause 5: Pro-rata mess fee refund is permitted if withdrawal is accompanied by valid warden approval. <em>The claim that mess fee is completely non-refundable is contradicted by source text.</em>"`
+      }
+    ];
+
+    document.querySelectorAll(".claim-item").forEach(item => {
+      item.addEventListener("click", () => {
+        document.querySelectorAll(".claim-item").forEach(c => c.classList.remove("active"));
+        item.classList.add("active");
+        const idx = parseInt(item.dataset.claim);
+        const data = claimData[idx];
+        const vBadge = document.getElementById("evidenceVerdictBadge");
+        vBadge.textContent = "Verdict: " + data.verdict;
+        vBadge.className = "intel-badge " + data.cls;
+        document.getElementById("evidenceSourceTag").innerHTML = "Source: <em>" + data.source + "</em>";
+        document.getElementById("evidencePassageText").innerHTML = data.text;
+      });
+    });
+
+    // Sandbox 3: Contradiction Resolve Button
+    document.getElementById("resolveConflictBtn").addEventListener("click", () => {
+      const res = document.getElementById("resolutionResult");
+      res.style.display = "block";
+      res.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    });
+
+    // Feature filter pills
+    document.querySelectorAll(".lp-filter-pill").forEach(pill => {
+      pill.addEventListener("click", () => {
+        document.querySelectorAll(".lp-filter-pill").forEach(p => p.classList.remove("active"));
+        pill.classList.add("active");
+        const filter = pill.dataset.filter;
+        document.querySelectorAll(".lp-feature-card").forEach(card => {
+          if (filter === "all") {
+            card.style.display = "flex";
+          } else {
+            const cats = card.dataset.cat || "";
+            card.style.display = cats.includes(filter) ? "flex" : "none";
+          }
+        });
+      });
     });
   </script>
 </body>

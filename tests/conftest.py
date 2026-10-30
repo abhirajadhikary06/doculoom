@@ -81,15 +81,4 @@ _USING_SQLITE = "sqlite" in os.environ.get("DATABASE_URL", "sqlite")
 
 def pytest_collection_modifyitems(config, items):
     """Auto-skip tests that require PostgreSQL when running with SQLite."""
-    skip_pg = pytest.mark.skip(reason="Requires PostgreSQL (JSONB models)")
-    _pg_required_files = {
-        "test_api_integration.py",
-    }
-    for item in items:
-        fname = item.fspath.basename
-        if fname in _pg_required_files and _USING_SQLITE:
-            item.add_marker(skip_pg)
-        # Also skip individual API test methods in unit test files
-        if hasattr(item, "cls") and item.cls is not None:
-            if "API" in (item.cls.__name__ or "") and _USING_SQLITE:
-                item.add_marker(skip_pg)
+    pass

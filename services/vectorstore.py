@@ -14,20 +14,73 @@ logger = logging.getLogger(__name__)
 # FastEmbed models for dense + BM25 sparse
 DENSE_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
 SPARSE_MODEL = "Qdrant/bm25"
+_st_model = None
 
 
 class VectorStore:
     def __init__(self):
         self.collection = Config.QDRANT_COLLECTION
+        self.is_memory = False
+        if Config.QDRANT_URL == ":memory:":
+            self.client = QdrantClient(location=":memory:")
+            self.is_memory = True
+            self._ensure_collection()
+            return
+
         kwargs = {"url": Config.QDRANT_URL, "prefer_grpc": False}
         if Config.QDRANT_API_KEY:
             kwargs["api_key"] = Config.QDRANT_API_KEY
         try:
             self.client = QdrantClient(**kwargs)
+            self._ensure_collection()
         except Exception as e:
             logger.warning("Qdrant connect failed, falling back to :memory: — %s", e)
             self.client = QdrantClient(location=":memory:")
-        self._ensure_collection()
+            self.is_memory = True
+            try:
+                self._ensure_collection()
+            except Exception as e2:
+                logger.warning("In-memory collection setup warning: %s", e2)
+
+    def _embed_dense(self, text: str) -> List[float]:
+        global _st_model
+        if _st_model is None:
+            try:
+                from sentence_transformers import SentenceTransformer
+                _st_model = SentenceTransformer(Config.EMBEDDING_MODEL)
+            except Exception:
+                pass
+        if _st_model is not None:
+            try:
+                return _st_model.encode(text).tolist()
+            except Exception:
+                pass
+        import hashlib
+        dim = Config.EMBEDDING_DIM
+        h = hashlib.sha256(text.encode()).digest()
+        vals = [(b / 255.0) - 0.5 for b in h]
+        return (vals * ((dim // len(vals)) + 1))[:dim]
+
+    def _embed_sparse(self, text: str) -> models.SparseVector:
+        import re, hashlib
+        from collections import Counter
+        words = re.findall(r"\w+", text.lower())
+        if not words:
+            return models.SparseVector(indices=[0], values=[0.0])
+        counts = Counter(words)
+        pairs = sorted(
+            [(int(hashlib.md5(w.encode()).hexdigest()[:6], 16) % 100000, float(cnt))
+             for w, cnt in counts.items()],
+            key=lambda x: x[0]
+        )
+        indices, values = [], []
+        for idx, val in pairs:
+            if indices and indices[-1] == idx:
+                values[-1] += val
+            else:
+                indices.append(idx)
+                values.append(val)
+        return models.SparseVector(indices=indices, values=values)
 
     def _ensure_collection(self):
         try:
@@ -101,19 +154,26 @@ class VectorStore:
                 "text": c["text"],
                 "text_preview": c["text"][:200],
             }
+            if self.is_memory:
+                vec = {
+                    "dense": self._embed_dense(c["text"]),
+                    "sparse": self._embed_sparse(c["text"]),
+                }
+            else:
+                vec = {
+                    "dense": models.Document(
+                        text=c["text"],
+                        model=DENSE_MODEL,
+                    ),
+                    "sparse": models.Document(
+                        text=c["text"],
+                        model=SPARSE_MODEL,
+                    ),
+                }
             points.append(
                 models.PointStruct(
                     id=pid,
-                    vector={
-                        "dense": models.Document(
-                            text=c["text"],
-                            model=DENSE_MODEL,
-                        ),
-                        "sparse": models.Document(
-                            text=c["text"],
-                            model=SPARSE_MODEL,
-                        ),
-                    },
+                    vector=vec,
                     payload=payload,
                 )
             )
@@ -150,18 +210,21 @@ class VectorStore:
             )
         query_filter = models.Filter(must=must)
 
+        dense_q = self._embed_dense(query) if self.is_memory else models.Document(text=query, model=DENSE_MODEL)
+        sparse_q = self._embed_sparse(query) if self.is_memory else models.Document(text=query, model=SPARSE_MODEL)
+
         try:
             response = self.client.query_points(
                 collection_name=self.collection,
                 prefetch=[
                     models.Prefetch(
-                        query=models.Document(text=query, model=DENSE_MODEL),
+                        query=dense_q,
                         using="dense",
                         limit=max(top_k * 3, 20),
                         filter=query_filter,
                     ),
                     models.Prefetch(
-                        query=models.Document(text=query, model=SPARSE_MODEL),
+                        query=sparse_q,
                         using="sparse",
                         limit=max(top_k * 3, 20),
                         filter=query_filter,
@@ -178,7 +241,7 @@ class VectorStore:
             try:
                 response = self.client.query_points(
                     collection_name=self.collection,
-                    query=models.Document(text=query, model=DENSE_MODEL),
+                    query=dense_q,
                     using="dense",
                     query_filter=query_filter,
                     limit=top_k,
@@ -265,10 +328,11 @@ class VectorStore:
             )
         query_filter = models.Filter(must=must)
 
+        dense_q = self._embed_dense(query) if self.is_memory else models.Document(text=query, model=DENSE_MODEL)
         try:
             response = self.client.query_points(
                 collection_name=self.collection,
-                query=models.Document(text=query, model=DENSE_MODEL),
+                query=dense_q,
                 using="dense",
                 query_filter=query_filter,
                 limit=top_k,

@@ -39,29 +39,18 @@ def create_baseline_question(
 ) -> str:
     """Add a question to the evaluation baseline dataset."""
     bid = str(uuid.uuid4())
-    db.session.execute(
-        text(
-            """
-            INSERT INTO eval_baseline (
-                id, tenant_id, question, relevant_doc_ids,
-                relevant_chunk_ids, expected_keywords, difficulty_class, created_by
-            ) VALUES (
-                :id, :tenant, :q, :docs::jsonb,
-                :chunks::jsonb, :kws::jsonb, :diff, :user
-            )
-            """
-        ),
-        {
-            "id": bid,
-            "tenant": tenant_id,
-            "q": question,
-            "docs": json.dumps(relevant_doc_ids),
-            "chunks": json.dumps(relevant_chunk_ids),
-            "kws": json.dumps(expected_keywords),
-            "diff": difficulty_class,
-            "user": created_by,
-        },
+    from models import EvalBaseline
+    eb = EvalBaseline(
+        id=bid,
+        tenant_id=tenant_id,
+        question=question,
+        relevant_doc_ids=relevant_doc_ids,
+        relevant_chunk_ids=relevant_chunk_ids,
+        expected_keywords=expected_keywords,
+        difficulty_class=difficulty_class,
+        created_by=created_by,
     )
+    db.session.add(eb)
     db.session.commit()
     return bid
 
@@ -246,35 +235,22 @@ def _save_drift_run(
 ) -> str:
     run_id = str(uuid.uuid4())
     try:
-        db.session.execute(
-            text(
-                """
-                INSERT INTO drift_runs (
-                    id, tenant_id, trigger_event, embedding_model,
-                    recall_at_5, recall_at_10, mrr, ndcg_at_10,
-                    baseline_recall, drift_pct, alert_triggered, details
-                ) VALUES (
-                    :id, :tenant, :trigger, :emb,
-                    :r5, :r10, :mrr, :ndcg,
-                    :base, :drift, :alert, :details::jsonb
-                )
-                """
-            ),
-            {
-                "id": run_id,
-                "tenant": tenant_id,
-                "trigger": trigger_event,
-                "emb": Config.EMBEDDING_MODEL,
-                "r5": recall_at_5,
-                "r10": recall_at_10,
-                "mrr": mrr,
-                "ndcg": ndcg_at_10,
-                "base": baseline_recall,
-                "drift": drift_pct,
-                "alert": alert_triggered,
-                "details": json.dumps(details),
-            },
+        from models import DriftRun
+        dr = DriftRun(
+            id=run_id,
+            tenant_id=tenant_id,
+            trigger_event=trigger_event,
+            embedding_model=Config.EMBEDDING_MODEL,
+            recall_at_5=recall_at_5,
+            recall_at_10=recall_at_10,
+            mrr=mrr,
+            ndcg_at_10=ndcg_at_10,
+            baseline_recall=baseline_recall,
+            drift_pct=drift_pct,
+            alert_triggered=alert_triggered,
+            details=details,
         )
+        db.session.add(dr)
         db.session.commit()
     except Exception as e:
         logger.error("Drift run save failed: %s", e)

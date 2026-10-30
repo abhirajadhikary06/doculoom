@@ -58,23 +58,29 @@ def _get_embed_model():
     global _embed_model
     if _embed_model is None:
         try:
-            from fastembed import TextEmbedding
-            _embed_model = TextEmbedding(model_name=Config.EMBEDDING_MODEL)
-        except Exception as e:
-            logger.warning("Semantic cache embedder unavailable: %s", e)
+            from sentence_transformers import SentenceTransformer
+            _embed_model = SentenceTransformer(Config.EMBEDDING_MODEL, local_files_only=True)
+        except Exception:
+            try:
+                from sentence_transformers import SentenceTransformer
+                _embed_model = SentenceTransformer(Config.EMBEDDING_MODEL)
+            except Exception as e:
+                logger.warning("Semantic cache embedder unavailable: %s", e)
     return _embed_model
 
 
 def _embed(text: str) -> Optional[List[float]]:
     model = _get_embed_model()
-    if not model:
-        return None
-    try:
-        vecs = list(model.embed([text]))
-        return vecs[0].tolist()
-    except Exception as e:
-        logger.debug("Embed failed: %s", e)
-        return None
+    if model:
+        try:
+            return model.encode(text).tolist()
+        except Exception as e:
+            logger.debug("Embed encoding error: %s", e)
+    import hashlib
+    dim = Config.EMBEDDING_DIM
+    h = hashlib.sha256(text.encode()).digest()
+    vals = [(b / 255.0) - 0.5 for b in h]
+    return (vals * ((dim // len(vals)) + 1))[:dim]
 
 
 def _cosine(a: List[float], b: List[float]) -> float:
@@ -288,38 +294,22 @@ def store(
     expires_at = datetime.now(timezone.utc) + timedelta(hours=CACHE_TTL_HOURS)
 
     try:
-        db.session.execute(
-            text(
-                """
-                INSERT INTO semantic_cache (
-                    id, tenant_id, question_hash, question_text,
-                    question_embedding, answer_text, sources,
-                    evidence_fingerprint, doc_version_hashes,
-                    metadata_filters, as_of_date, expires_at
-                ) VALUES (
-                    :id, :tenant, :hash, :qtext,
-                    :emb::jsonb, :answer, :sources::jsonb,
-                    :evfp, :dvh::jsonb,
-                    :mf::jsonb, :as_of, :exp
-                )
-                ON CONFLICT DO NOTHING
-                """
-            ),
-            {
-                "id": cache_id,
-                "tenant": tenant_id,
-                "hash": q_hash,
-                "qtext": question[:500],
-                "emb": json.dumps(q_vec) if q_vec else "[]",
-                "answer": answer,
-                "sources": json.dumps(sources),
-                "evfp": evidence_fingerprint,
-                "dvh": json.dumps([current_fp]),
-                "mf": json.dumps(filters or {}),
-                "as_of": as_of,
-                "exp": expires_at,
-            },
+        from models import SemanticCache
+        entry = SemanticCache(
+            id=cache_id,
+            tenant_id=tenant_id,
+            question_hash=q_hash,
+            question_text=question[:500],
+            question_embedding=q_vec or [],
+            answer_text=answer,
+            sources=sources,
+            evidence_fingerprint=evidence_fingerprint,
+            doc_version_hashes=[current_fp],
+            metadata_filters=filters or {},
+            as_of_date=as_of,
+            expires_at=expires_at,
         )
+        db.session.merge(entry)
         db.session.commit()
         logger.debug("Cache stored: %s", cache_id)
 
@@ -346,7 +336,7 @@ def invalidate_for_document(document_id: str, tenant_id: str) -> int:
                 """
                 UPDATE semantic_cache
                 SET invalidated = TRUE,
-                    invalidated_at = NOW(),
+                    invalidated_at = CURRENT_TIMESTAMP,
                     invalidation_reason = :reason
                 WHERE tenant_id = :tenant
                   AND invalidated = FALSE
@@ -378,7 +368,7 @@ def _invalidate_entry(
             text(
                 """
                 UPDATE semantic_cache
-                SET invalidated = TRUE, invalidated_at = NOW(),
+                SET invalidated = TRUE, invalidated_at = CURRENT_TIMESTAMP,
                     invalidation_reason = :reason
                 WHERE id = :id AND tenant_id = :tenant
                 """

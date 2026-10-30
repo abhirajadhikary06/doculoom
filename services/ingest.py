@@ -164,34 +164,38 @@ def _run_post_ingest_pipelines(
     Run all post-ingest analysis pipelines.
     These are best-effort — failures don't affect document status.
     """
-    def _run():
+    app_obj = None
+    try:
         from flask import current_app
-
-        # Need app context if running in background thread
+        app_obj = current_app._get_current_object()
+    except Exception:
         try:
-            with current_app.app_context():
+            from app import app as flask_app
+            app_obj = flask_app
+        except Exception:
+            app_obj = None
+
+    def _run():
+        try:
+            if app_obj:
+                with app_obj.app_context():
+                    _execute_post_ingest(
+                        doc_id, tenant_id, full_text, pages, chunks,
+                        extract_meta, original_name, vector_store,
+                    )
+            else:
                 _execute_post_ingest(
                     doc_id, tenant_id, full_text, pages, chunks,
                     extract_meta, original_name, vector_store,
                 )
-        except RuntimeError:
-            # Not in background thread — run directly
-            _execute_post_ingest(
-                doc_id, tenant_id, full_text, pages, chunks,
-                extract_meta, original_name, vector_store,
-            )
+        except Exception as ex:
+            logger.warning("Post-ingest execution error: %s", ex)
 
     if background:
         t = threading.Thread(target=_run, daemon=True)
         t.start()
     else:
-        try:
-            _execute_post_ingest(
-                doc_id, tenant_id, full_text, pages, chunks,
-                extract_meta, original_name, vector_store,
-            )
-        except Exception as e:
-            logger.warning("Post-ingest pipeline error: %s", e)
+        _run()
 
 
 def _execute_post_ingest(

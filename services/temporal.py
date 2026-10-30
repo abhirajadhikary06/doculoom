@@ -255,46 +255,30 @@ def register_document_version(
     valid_from = date_info.get("valid_from")
     valid_until = date_info.get("valid_until")
 
-    db.session.execute(
-        text(
-            """
-            INSERT INTO document_versions
-                (id, document_id, tenant_id, version_number, content_hash,
-                 pub_date, valid_from, valid_until, extracted_dates, raw_meta)
-            VALUES
-                (:id, :doc_id, :tenant_id, :version, :hash,
-                 :pub_date, :valid_from, :valid_until, :dates::jsonb, :meta::jsonb)
-            """
-        ),
-        {
-            "id": version_id,
-            "doc_id": document_id,
-            "tenant_id": tenant_id,
-            "version": next_version,
-            "hash": content_hash,
-            "pub_date": pub_date,
-            "valid_from": valid_from,
-            "valid_until": valid_until,
-            "dates": str(date_info.get("all_dates", [])).replace("'", '"'),
-            "meta": "{}",
-        },
+    from models import DocumentVersion, Document
+    v = DocumentVersion(
+        id=version_id,
+        document_id=document_id,
+        tenant_id=tenant_id,
+        version_number=next_version,
+        content_hash=content_hash,
+        pub_date=pub_date,
+        valid_from=valid_from,
+        valid_until=valid_until,
+        extracted_dates=date_info.get("all_dates", []),
+        raw_meta={},
     )
+    db.session.add(v)
 
-    # Also update the documents table with temporal metadata
-    update_fields = {"version": next_version}
-    if pub_date:
-        update_fields["pub_date"] = pub_date
-    if valid_from:
-        update_fields["valid_from"] = valid_from
-    if valid_until:
-        update_fields["valid_until"] = valid_until
-
-    set_clause = ", ".join(f"{k} = :{k}" for k in update_fields)
-    update_fields["doc_id"] = document_id
-    db.session.execute(
-        text(f"UPDATE documents SET {set_clause} WHERE id = :doc_id"),
-        update_fields,
-    )
+    doc = Document.query.get(document_id)
+    if doc:
+        doc.version = next_version
+        if pub_date:
+            doc.pub_date = pub_date
+        if valid_from:
+            doc.valid_from = valid_from
+        if valid_until:
+            doc.valid_until = valid_until
 
     db.session.commit()
     logger.info(
@@ -374,13 +358,22 @@ def detect_supersession(
         except Exception:
             pass
 
+    new_doc_name = ""
+    try:
+        from models import Document
+        nd = Document.query.get(new_document_id)
+        if nd:
+            new_doc_name = nd.original_name or nd.filename or ""
+    except Exception:
+        pass
+
     for row in existing_docs:
         old_id, old_name, old_pub, old_from, old_until, old_meta = row
         if old_id == new_document_id:
             continue
 
         # Check name similarity (same base document different year)
-        name_sim = _name_similarity(new_document_id, str(old_name or ""))
+        name_sim = _name_similarity(new_doc_name or new_document_id, str(old_name or ""))
 
         # Check temporal: new doc's valid_from > old doc's valid_from → likely supersedes
         temporal_supersession = False
@@ -400,12 +393,19 @@ def detect_supersession(
         )
 
         confidence = 0.0
+        reason = "temporal"
         if explicit:
             confidence = 0.9
+            reason = "explicit"
         elif temporal_supersession and name_sim > 0.5:
             confidence = 0.7
+            reason = "temporal_and_name_match"
+        elif name_sim >= 0.85:
+            confidence = 0.75
+            reason = "revised_document_version"
         elif temporal_supersession:
             confidence = 0.4
+            reason = "temporal"
 
         if confidence > 0.35:
             candidates.append(
@@ -414,7 +414,7 @@ def detect_supersession(
                     "new_document_id": new_document_id,
                     "relationship": "supersedes",
                     "confidence": confidence,
-                    "reason": "explicit" if explicit else "temporal",
+                    "reason": reason,
                 }
             )
 
@@ -432,29 +432,19 @@ def record_supersession(
     sup_id = str(uuid.uuid4())
     import json
 
-    db.session.execute(
-        text(
-            """
-            INSERT INTO document_supersessions
-                (id, tenant_id, old_document_id, new_document_id, relationship, evidence)
-            VALUES (:id, :tenant, :old, :new, :rel, :ev::jsonb)
-            ON CONFLICT DO NOTHING
-            """
-        ),
-        {
-            "id": sup_id,
-            "tenant": tenant_id,
-            "old": old_document_id,
-            "new": new_document_id,
-            "rel": relationship,
-            "ev": json.dumps(evidence or {}),
-        },
+    from models import DocumentSupersession, Document
+    sup = DocumentSupersession(
+        id=sup_id,
+        tenant_id=tenant_id,
+        old_document_id=old_document_id,
+        new_document_id=new_document_id,
+        relationship=relationship,
+        evidence=evidence or {},
     )
-    # Mark old document as superseded
-    db.session.execute(
-        text("UPDATE documents SET superseded_by = :new WHERE id = :old"),
-        {"new": new_document_id, "old": old_document_id},
-    )
+    db.session.add(sup)
+    old_doc = Document.query.get(old_document_id)
+    if old_doc:
+        old_doc.superseded_by = new_document_id
     db.session.commit()
     logger.info(
         "Recorded supersession: %s → %s", old_document_id[:8], new_document_id[:8]

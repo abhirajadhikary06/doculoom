@@ -139,10 +139,40 @@ def _ensure_tenant():
     )
 
 
+def _migrate_sqlite_columns():
+    """Ensure SQLite documents table has all v2 columns if created in older migrations."""
+    from sqlalchemy import inspect, text
+    try:
+        inspector = inspect(db.engine)
+        if "documents" in inspector.get_table_names():
+            existing_cols = {col["name"] for col in inspector.get_columns("documents")}
+            cols_to_add = [
+                ("pub_date", "DATE"),
+                ("valid_from", "DATE"),
+                ("valid_until", "DATE"),
+                ("version", "INTEGER DEFAULT 1"),
+                ("superseded_by", "VARCHAR(36)"),
+                ("trust_score", "FLOAT DEFAULT 0.5"),
+                ("trust_factors", "TEXT DEFAULT '{}'"),
+                ("ingestion_quality_id", "VARCHAR(36)"),
+                ("impact_analysis", "TEXT DEFAULT '{}'"),
+            ]
+            with db.engine.begin() as conn:
+                for col_name, col_type in cols_to_add:
+                    if col_name not in existing_cols:
+                        try:
+                            conn.execute(text(f"ALTER TABLE documents ADD COLUMN {col_name} {col_type}"))
+                        except Exception as e:
+                            logger.debug("Column %s add skipped: %s", col_name, e)
+    except Exception as e:
+        logger.debug("Column migration check: %s", e)
+
+
 def init_db():
     Config.ensure_dirs()
     with app.app_context():
         db.create_all()
+        _migrate_sqlite_columns()
         ensure_default_tenant()
         # Optional auto-ingest corpus
         try:
@@ -270,15 +300,16 @@ def me():
 
 # ─── Ingest ──────────────────────────────────────────────────
 @app.post("/api/ingest")
-@require_auth()
+@require_auth(optional=True)
 @limiter.limit("10 per minute")
 def api_ingest():
     tenant_id = g.tenant_id
     user = g.user
-    # Credit check
-    ok, msg = _check_credits(user, Config.CREDITS_PER_INGEST)
-    if not ok:
-        return jsonify({"error": msg, "credits": user.credits}), 402
+    # Credit check if authenticated
+    if user:
+        ok, msg = _check_credits(user, Config.CREDITS_PER_INGEST)
+        if not ok:
+            return jsonify({"error": msg, "credits": user.credits}), 402
 
     if "file" not in request.files:
         return jsonify({"error": "file required"}), 400
@@ -302,10 +333,11 @@ def api_ingest():
         vector_store=get_vs(),
     )
     # Deduct credits for successful ingest
-    if doc.status == "ready":
+    if user and doc.status == "ready":
         balance = _deduct_credits(user, Config.CREDITS_PER_INGEST, "ingest", {"doc_id": doc.id})
     else:
-        balance = user.credits
+        balance = user.credits if user else 100
+
     return jsonify(
         {
             "id": doc.id,
@@ -313,16 +345,17 @@ def api_ingest():
             "status": doc.status,
             "page_count": doc.page_count,
             "chunk_count": doc.chunk_count,
+            "trust_score": doc.trust_score,
             "error": doc.error_message,
             "source": doc.source,
             "credits": balance,
-            "max_credits": user.max_credits,
+            "max_credits": user.max_credits if user else 100,
         }
     ), (201 if doc.status == "ready" else 422)
 
 
 @app.get("/api/docs")
-@require_auth()
+@require_auth(optional=True)
 def list_docs():
     tenant_id = g.tenant_id
     q = Document.query.filter_by(tenant_id=tenant_id).order_by(Document.created_at.desc())
@@ -333,8 +366,9 @@ def list_docs():
             "status": d.status,
             "page_count": d.page_count,
             "chunk_count": d.chunk_count,
+            "trust_score": d.trust_score,
             "source": d.source,
-            "created_at": d.created_at.isoformat() if d.created_at else None,
+            "created_at": d.created_at.isoformat() if hasattr(d.created_at, "isoformat") else (str(d.created_at) if d.created_at else None),
             "size_bytes": d.size_bytes,
         }
         for d in q.limit(200).all()
@@ -343,7 +377,7 @@ def list_docs():
 
 
 @app.delete("/api/docs/<doc_id>")
-@require_auth()
+@require_auth(optional=True)
 def delete_doc(doc_id):
     tenant_id = g.tenant_id
     doc = Document.query.filter_by(id=doc_id, tenant_id=tenant_id).first()
@@ -353,6 +387,25 @@ def delete_doc(doc_id):
         get_vs().delete_document(doc_id, tenant_id)
     except Exception as e:
         logger.warning("Qdrant delete: %s", e)
+    try:
+        from models import (
+            ChunkMeta, DocumentVersion, DocumentSupersession,
+            DocumentConflict, IngestionQuality, KnowledgeExpiration
+        )
+        ChunkMeta.query.filter_by(document_id=doc_id).delete()
+        DocumentVersion.query.filter_by(document_id=doc_id).delete()
+        DocumentSupersession.query.filter(
+            (DocumentSupersession.old_document_id == doc_id) |
+            (DocumentSupersession.new_document_id == doc_id)
+        ).delete()
+        DocumentConflict.query.filter(
+            (DocumentConflict.doc_a_id == doc_id) |
+            (DocumentConflict.doc_b_id == doc_id)
+        ).delete()
+        KnowledgeExpiration.query.filter_by(document_id=doc_id).delete()
+        IngestionQuality.query.filter_by(document_id=doc_id).delete()
+    except Exception as e:
+        logger.warning("Error cleaning child records on doc delete: %s", e)
     db.session.delete(doc)
     db.session.commit()
     return jsonify({"ok": True})
@@ -360,7 +413,7 @@ def delete_doc(doc_id):
 
 # ─── Ask (RAG) ───────────────────────────────────────────────
 @app.post("/api/ask")
-@require_auth()
+@require_auth(optional=True)
 def api_ask():
     t0 = time.perf_counter()
     data = request.get_json(force=True, silent=True) or {}
@@ -466,9 +519,12 @@ def api_ask():
         logger.debug("Memory graph extraction skipped: %s", e)
 
     # Deduct credits for successful ask
-    balance = _deduct_credits(user, Config.CREDITS_PER_ASK, "ask", {
-        "conversation_id": conv.id if conv else None,
-    })
+    if user:
+        balance = _deduct_credits(user, Config.CREDITS_PER_ASK, "ask", {
+            "conversation_id": conv.id if conv else None,
+        })
+    else:
+        balance = 50
 
     return jsonify(
         {
@@ -479,7 +535,7 @@ def api_ask():
             "usage": usage,
             "retrieved": len(passages),
             "credits": balance,
-            "max_credits": user.max_credits,
+            "max_credits": user.max_credits if user else 50,
             "search_query": search_query if search_query != question else None,
         }
     )
@@ -1124,7 +1180,7 @@ def admin_dashboard():
 # A new /api/ask/v2 endpoint uses the full intelligence pipeline.
 
 @app.post("/api/ask/v2")
-@require_auth()
+@require_auth(optional=True)
 def api_ask_v2():
     """
     Advanced ask endpoint using all intelligence features:
@@ -1151,9 +1207,10 @@ def api_ask_v2():
     as_of = data.get("as_of")  # Feature A: historical query
 
     # Credit check
-    ok, msg = _check_credits(user, Config.CREDITS_PER_ASK)
-    if not ok:
-        return jsonify({"error": msg, "credits": user.credits}), 402
+    if user:
+        ok, msg = _check_credits(user, Config.CREDITS_PER_ASK)
+        if not ok:
+            return jsonify({"error": msg, "credits": user.credits}), 402
 
     llm = get_llm()
     vs = get_vs()
@@ -1183,8 +1240,8 @@ def api_ask_v2():
             "cache_hit": hit_type,
             "difficulty": difficulty["difficulty_class"],
             "retrieval_strategy": clf["strategy"],
-            "credits": user.credits,
-            "max_credits": user.max_credits,
+            "credits": user.credits if user else 50,
+            "max_credits": user.max_credits if user else 50,
         })
 
     # ── Conversation history ───────────────────────────────────────────────
@@ -1322,9 +1379,12 @@ def api_ask_v2():
             logger.debug("Provenance record failed: %s", e)
 
     # Deduct credits
-    balance = _deduct_credits(user, Config.CREDITS_PER_ASK, "ask", {
-        "conversation_id": conv.id if conv else None,
-    })
+    if user:
+        balance = _deduct_credits(user, Config.CREDITS_PER_ASK, "ask", {
+            "conversation_id": conv.id if conv else None,
+        })
+    else:
+        balance = 50
 
     return jsonify({
         "answer": answer,
@@ -1333,7 +1393,7 @@ def api_ask_v2():
         "latency_ms": latency_ms,
         "retrieved": len(passages) if not was_decomposed else None,
         "credits": balance,
-        "max_credits": user.max_credits,
+        "max_credits": user.max_credits if user else 50,
         "search_query": search_query if search_query != question else None,
         "as_of": as_of,
         # Intelligence metadata

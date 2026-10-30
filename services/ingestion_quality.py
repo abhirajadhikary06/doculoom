@@ -215,24 +215,15 @@ def quarantine_document(
 ) -> bool:
     """Mark a document as quarantined due to quality issues."""
     try:
-        db.session.execute(
-            text(
-                """
-                UPDATE ingestion_quality
-                SET quarantined = TRUE, quarantine_reason = :reason,
-                    updated_at = NOW()
-                WHERE document_id = :doc_id AND tenant_id = :tenant
-                """
-            ),
-            {"doc_id": document_id, "tenant": tenant_id, "reason": reason},
-        )
-        db.session.execute(
-            text(
-                "UPDATE documents SET status = 'quarantined', "
-                "error_message = :msg WHERE id = :id"
-            ),
-            {"msg": f"Quarantined: {reason}", "id": document_id},
-        )
+        from models import IngestionQuality, Document
+        iq = IngestionQuality.query.filter_by(document_id=document_id, tenant_id=tenant_id).first()
+        if iq:
+            iq.quarantined = True
+            iq.quarantine_reason = reason
+        doc = Document.query.get(document_id)
+        if doc:
+            doc.status = "quarantined"
+            doc.error_message = f"Quarantined: {reason}"
         db.session.commit()
         logger.warning("Document %s quarantined: %s", document_id[:8], reason)
         return True
@@ -257,55 +248,32 @@ def save_quality_record(
     """Persist ingestion quality metrics. Returns quality record id."""
     qid = str(uuid.uuid4())
     try:
-        db.session.execute(
-            text(
-                """
-                INSERT INTO ingestion_quality (
-                    id, document_id, tenant_id,
-                    text_coverage, avg_ocr_confidence, zero_text_pages,
-                    total_pages, duplicate_chunk_count, empty_chunk_count,
-                    malformed_chunk_count, ocr_pages, page_issues,
-                    overall_quality_score, quarantined, quarantine_reason
-                ) VALUES (
-                    :id, :doc, :tenant,
-                    :cov, :ocr_conf, :zero_pages,
-                    :total_pages, :dup, :empty,
-                    :malformed, :ocr_pg::jsonb, :issues::jsonb,
-                    :score, :quarantined, :qreason
-                )
-                ON CONFLICT DO NOTHING
-                """
-            ),
-            {
-                "id": qid,
-                "doc": document_id,
-                "tenant": tenant_id,
-                "cov": page_metrics.get("text_coverage", 0),
-                "ocr_conf": 1.0 - (
-                    page_metrics.get("ocr_page_count", 0)
-                    / max(page_metrics.get("total_pages", 1), 1) * 0.3
-                ),
-                "zero_pages": page_metrics.get("zero_text_pages", 0),
-                "total_pages": page_metrics.get("total_pages", 0),
-                "dup": chunk_metrics.get("duplicate_chunks", 0),
-                "empty": chunk_metrics.get("empty_chunks", 0),
-                "malformed": chunk_metrics.get("malformed_chunks", 0),
-                "ocr_pg": json.dumps(
-                    extract_meta.get("ocr_pages", [])
-                ),
-                "issues": json.dumps(page_metrics.get("page_issues", {})),
-                "score": quality_score,
-                "quarantined": quarantined,
-                "qreason": quarantine_reason,
-            },
+        from models import IngestionQuality, Document
+        avg_ocr = 1.0 - (
+            page_metrics.get("ocr_page_count", 0)
+            / max(page_metrics.get("total_pages", 1), 1) * 0.3
         )
-        # Link quality record to document
-        db.session.execute(
-            text(
-                "UPDATE documents SET ingestion_quality_id = :qid WHERE id = :doc"
-            ),
-            {"qid": qid, "doc": document_id},
+        iq = IngestionQuality(
+            id=qid,
+            document_id=document_id,
+            tenant_id=tenant_id,
+            text_coverage=page_metrics.get("text_coverage", 0),
+            avg_ocr_confidence=avg_ocr,
+            zero_text_pages=page_metrics.get("zero_text_pages", 0),
+            total_pages=page_metrics.get("total_pages", 0),
+            duplicate_chunk_count=chunk_metrics.get("duplicate_chunks", 0),
+            empty_chunk_count=chunk_metrics.get("empty_chunks", 0),
+            malformed_chunk_count=chunk_metrics.get("malformed_chunks", 0),
+            ocr_pages=extract_meta.get("ocr_pages", []),
+            page_issues=page_metrics.get("page_issues", {}),
+            overall_quality_score=quality_score,
+            quarantined=quarantined,
+            quarantine_reason=quarantine_reason,
         )
+        db.session.merge(iq)
+        doc = Document.query.get(document_id)
+        if doc:
+            doc.ingestion_quality_id = qid
         db.session.commit()
         logger.info(
             "Quality record saved for doc %s: score=%.2f", document_id[:8], quality_score
@@ -428,7 +396,7 @@ def get_quality_report(
             "quarantined": r[10],
             "quarantine_reason": r[11],
             "reprocess_attempts": r[12],
-            "created_at": r[13].isoformat() if r[13] else None,
+            "created_at": r[13].isoformat() if hasattr(r[13], "isoformat") else (str(r[13]) if r[13] else None),
         }
         for r in rows
     ]
@@ -464,7 +432,7 @@ def reprocess_document(
                 """
                 UPDATE ingestion_quality
                 SET reprocess_attempts = reprocess_attempts + 1,
-                    last_attempt_at = NOW()
+                    last_attempt_at = CURRENT_TIMESTAMP
                 WHERE document_id = :doc AND tenant_id = :tenant
                 """
             ),

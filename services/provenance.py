@@ -78,53 +78,32 @@ def record_execution(
     }
 
     try:
-        db.session.execute(
-            text(
-                """
-                INSERT INTO query_execution_logs (
-                    id, tenant_id, user_id, conversation_id,
-                    question, search_query, retrieval_strategy,
-                    query_intent, difficulty_class,
-                    answer_hash, answer_text, sources,
-                    retrieval_config, embedding_model, llm_model, prompt_version,
-                    latency_ms, token_usage, reranked, was_decomposed,
-                    cache_hit, as_of_date
-                ) VALUES (
-                    :id, :tenant, :user, :conv,
-                    :question, :sq, :strategy,
-                    :intent, :diff_class,
-                    :ahash, :answer, :sources::jsonb,
-                    :rc::jsonb, :emb, :llm, :pv,
-                    :lat, :usage::jsonb, :reranked, :decomposed,
-                    :cache_hit, :as_of
-                )
-                """
-            ),
-            {
-                "id": log_id,
-                "tenant": tenant_id,
-                "user": user_id,
-                "conv": conversation_id,
-                "question": question,
-                "sq": search_query,
-                "strategy": retrieval_strategy,
-                "intent": query_intent,
-                "diff_class": difficulty_class,
-                "ahash": answer_hash,
-                "answer": answer,
-                "sources": json.dumps(sources),
-                "rc": json.dumps(retrieval_config),
-                "emb": Config.EMBEDDING_MODEL,
-                "llm": Config.GROQ_MODEL,
-                "pv": PROMPT_VERSION,
-                "lat": latency_ms,
-                "usage": json.dumps(token_usage),
-                "reranked": reranked,
-                "decomposed": was_decomposed,
-                "cache_hit": cache_hit,
-                "as_of": as_of_date,
-            },
+        from models import QueryExecutionLog, ExecutionEvidence
+        qlog = QueryExecutionLog(
+            id=log_id,
+            tenant_id=tenant_id,
+            user_id=user_id,
+            conversation_id=conversation_id,
+            question=question,
+            search_query=search_query,
+            retrieval_strategy=retrieval_strategy,
+            query_intent=query_intent,
+            difficulty_class=difficulty_class,
+            answer_hash=answer_hash,
+            answer_text=answer,
+            sources=sources,
+            retrieval_config=retrieval_config,
+            embedding_model=Config.EMBEDDING_MODEL,
+            llm_model=Config.GROQ_MODEL,
+            prompt_version=PROMPT_VERSION,
+            latency_ms=latency_ms,
+            token_usage=token_usage,
+            reranked=reranked,
+            was_decomposed=was_decomposed,
+            cache_hit=cache_hit,
+            as_of_date=as_of_date,
         )
+        db.session.add(qlog)
 
         # Store per-chunk evidence
         for rank, p in enumerate(passages):
@@ -140,39 +119,23 @@ def record_execution(
             ).fetchone()
             doc_version = doc_version_row[0] if doc_version_row else None
 
-            db.session.execute(
-                text(
-                    """
-                    INSERT INTO execution_evidence (
-                        id, log_id, tenant_id, chunk_id, document_id,
-                        chunk_index, page_start, retrieval_rank,
-                        dense_score, sparse_score, rrf_score, rerank_score,
-                        text_snapshot, doc_version
-                    ) VALUES (
-                        :id, :log, :tenant, :chunk, :doc,
-                        :cidx, :page, :rank,
-                        :dense, :sparse, :rrf, :rerank,
-                        :text, :ver
-                    )
-                    """
-                ),
-                {
-                    "id": ev_id,
-                    "log": log_id,
-                    "tenant": tenant_id,
-                    "chunk": p.get("id", ""),
-                    "doc": p.get("document_id", ""),
-                    "cidx": p.get("chunk_index", 0),
-                    "page": p.get("page_start", 1),
-                    "rank": rank,
-                    "dense": p.get("dense_score"),
-                    "sparse": p.get("sparse_score"),
-                    "rrf": p.get("score"),
-                    "rerank": p.get("rerank_score"),
-                    "text": (p.get("text") or "")[:2000],
-                    "ver": doc_version,
-                },
+            ev = ExecutionEvidence(
+                id=ev_id,
+                log_id=log_id,
+                tenant_id=tenant_id,
+                chunk_id=p.get("id", ""),
+                document_id=p.get("document_id", ""),
+                chunk_index=p.get("chunk_index", 0),
+                page_start=p.get("page_start", 1),
+                retrieval_rank=rank,
+                dense_score=p.get("dense_score"),
+                sparse_score=p.get("sparse_score"),
+                rrf_score=p.get("score"),
+                rerank_score=p.get("rerank_score"),
+                text_snapshot=(p.get("text") or "")[:2000],
+                doc_version=doc_version,
             )
+            db.session.add(ev)
 
         db.session.commit()
         logger.debug("Execution recorded: log_id=%s", log_id)
@@ -275,7 +238,7 @@ def get_execution_trace(log_id: str, tenant_id: str) -> Optional[Dict[str, Any]]
         "was_decomposed": decomposed,
         "cache_hit": cache_hit,
         "as_of_date": str(as_of) if as_of else None,
-        "created_at": created_at.isoformat() if created_at else None,
+        "created_at": created_at.isoformat() if hasattr(created_at, "isoformat") else (str(created_at) if created_at else None),
         "evidence": evidence,
         "evidence_count": len(evidence),
     }
@@ -408,7 +371,11 @@ def detect_retrieval_regression(
                     "distinct_answers": len(set(hashes)),
                     "first_log_id": entries_sorted[0]["log_id"],
                     "latest_log_id": entries_sorted[-1]["log_id"],
-                    "first_seen": entries_sorted[0]["ts"].isoformat()
+                    "first_seen": (
+                        entries_sorted[0]["ts"].isoformat()
+                        if hasattr(entries_sorted[0]["ts"], "isoformat")
+                        else str(entries_sorted[0]["ts"])
+                    )
                     if entries_sorted[0]["ts"]
                     else None,
                 }
@@ -462,7 +429,7 @@ def list_executions(
             "latency_ms": r[5],
             "cache_hit": r[6],
             "was_decomposed": r[7],
-            "created_at": r[8].isoformat() if r[8] else None,
+            "created_at": r[8].isoformat() if hasattr(r[8], "isoformat") else (str(r[8]) if r[8] else None),
         }
         for r in rows
     ]

@@ -215,18 +215,12 @@ def compute_trust_score(document_id: str) -> Dict[str, Any]:
 
     # Persist updated trust score
     try:
-        db.session.execute(
-            text(
-                "UPDATE documents SET trust_score = :score, "
-                "trust_factors = :factors::jsonb WHERE id = :id"
-            ),
-            {
-                "score": total_score,
-                "factors": json.dumps(factors),
-                "id": document_id,
-            },
-        )
-        db.session.commit()
+        from models import Document
+        doc = Document.query.get(document_id)
+        if doc:
+            doc.trust_score = total_score
+            doc.trust_factors = factors
+            db.session.commit()
     except Exception as e:
         logger.debug("Trust score persist failed: %s", e)
         db.session.rollback()
@@ -311,12 +305,8 @@ def apply_trust_reranking(
     if not doc_ids:
         return passages
 
-    trust_rows = db.session.execute(
-        text(
-            "SELECT id, trust_score FROM documents WHERE id = ANY(:ids)"
-        ),
-        {"ids": doc_ids},
-    ).fetchall()
+    from models import Document
+    trust_rows = Document.query.filter(Document.id.in_(doc_ids)).with_entities(Document.id, Document.trust_score).all()
     trust_map = {r[0]: float(r[1] or 0.5) for r in trust_rows}
 
     for p in passages:
@@ -331,29 +321,18 @@ def apply_trust_reranking(
 
 def get_trust_scores(tenant_id: str, limit: int = 50) -> List[Dict[str, Any]]:
     """Get all trust scores for a tenant's documents."""
-    rows = db.session.execute(
-        text(
-            """
-            SELECT id, original_name, trust_score, trust_factors,
-                   superseded_by, pub_date, status
-            FROM documents
-            WHERE tenant_id = :tenant AND status = 'ready'
-            ORDER BY trust_score DESC NULLS LAST
-            LIMIT :lim
-            """
-        ),
-        {"tenant": tenant_id, "lim": limit},
-    ).fetchall()
+    from models import Document
+    docs = Document.query.filter_by(tenant_id=tenant_id, status='ready').order_by(Document.trust_score.desc()).limit(limit).all()
 
     return [
         {
-            "document_id": r[0],
-            "filename": r[1],
-            "trust_score": r[2],
-            "trust_factors": r[3],
-            "superseded": r[4] is not None,
-            "pub_date": str(r[5]) if r[5] else None,
-            "interpretation": _interpret_score(float(r[2] or 0.5)),
+            "document_id": d.id,
+            "filename": d.original_name or d.filename,
+            "trust_score": d.trust_score,
+            "trust_factors": d.trust_factors,
+            "superseded": d.superseded_by is not None,
+            "pub_date": str(d.pub_date) if d.pub_date else None,
+            "interpretation": _interpret_score(float(d.trust_score or 0.5)),
         }
-        for r in rows
+        for d in docs
     ]

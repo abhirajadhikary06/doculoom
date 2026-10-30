@@ -64,7 +64,7 @@ def upsert_expiration(
                 UPDATE knowledge_expiration
                 SET expiry_date = :exp, review_date = :rev,
                     effective_period_end = :eff, expiry_source = :src,
-                    notes = :notes, updated_at = NOW()
+                    notes = :notes, updated_at = CURRENT_TIMESTAMP
                 WHERE document_id = :doc AND tenant_id = :tenant
                 """
             ),
@@ -191,7 +191,7 @@ def refresh_expiry_statuses(tenant_id: str) -> Dict[str, int]:
         db.session.execute(
             text(
                 "UPDATE knowledge_expiration SET expiry_status = :s, "
-                "updated_at = NOW() WHERE id = :id"
+                "updated_at = CURRENT_TIMESTAMP WHERE id = :id"
             ),
             {"s": new_status, "id": rec_id},
         )

@@ -439,13 +439,11 @@ def run_impact_analysis(
 
     # Persist impact summary to documents.impact_analysis
     try:
-        db.session.execute(
-            text(
-                "UPDATE documents SET impact_analysis = :ia::jsonb WHERE id = :id"
-            ),
-            {"ia": json.dumps(report), "id": document_id},
-        )
-        db.session.commit()
+        from models import Document
+        doc_obj = Document.query.get(document_id)
+        if doc_obj:
+            doc_obj.impact_analysis = report
+            db.session.commit()
     except Exception as e:
         logger.warning("Impact analysis persist failed: %s", e)
         db.session.rollback()
